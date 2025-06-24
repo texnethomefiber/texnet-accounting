@@ -84,8 +84,8 @@
       });
 
       expenditureRows.forEach(row => {
-  let amount = parseFloat((row.Amount || "").replace("Ksh", "").trim());
-  let cost = parseFloat((row["Transaction Cost"] || "").replace("Ksh", "").trim());
+  let amount = parseFloat((row.Amount || "").replace("Ksh", "").replace(/,/g, "").trim());
+  let cost = parseFloat((row["Transaction Cost"] || "").replace("Ksh", "").replace(/,/g, "").trim());
 
   amount = isNaN(amount) ? 0 : amount;
   cost = isNaN(cost) ? 0 : cost;
