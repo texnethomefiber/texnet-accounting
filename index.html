@@ -4,7 +4,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
@@ -43,11 +42,6 @@
     .btn-group button:hover {
       background-color: #005fa3;
     }
-    canvas {
-      max-width: 800px;
-      margin: 20px auto;
-      display: block;
-    }
     table {
       width: 90%;
       margin: 20px auto;
@@ -58,9 +52,6 @@
       padding: 10px;
       border: 1px solid #ccc;
       text-align: left;
-    }
-    tr.missing-cost td {
-      background-color: #fff3cd;
     }
     #loginOverlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -114,6 +105,7 @@
   let incomeMap = {}, expenseMap = {}, months = [], allIncome = [], allExpense = [];
   let currentChart;
   let currentChartType = 'bar';
+  let selectedMonth = "";
 
   function checkPassword() {
     const input = document.getElementById("loginPassword").value;
@@ -190,30 +182,11 @@
   }
 
   function drawSelectedMonth() {
-    const month = document.getElementById("monthSelect").value;
-    const income = incomeMap[month] || 0;
-    const expense = expenseMap[month]?.exp || 0;
-    const cost = expenseMap[month]?.cost || 0;
+    selectedMonth = document.getElementById("monthSelect").value;
+    const income = incomeMap[selectedMonth] || 0;
+    const expense = expenseMap[selectedMonth]?.exp || 0;
+    const cost = expenseMap[selectedMonth]?.cost || 0;
     const net = income - expense - cost;
-
-    if (currentChart) currentChart.destroy();
-
-    const ctx = document.getElementById('chartCanvas').getContext('2d');
-    currentChart = new Chart(ctx, {
-      type: currentChartType,
-      data: {
-        labels: ['Income', 'Expenditure', 'Transaction Cost'],
-        datasets: [{
-          label: month,
-          data: [income, expense, cost],
-          backgroundColor: ['#4caf50', '#f44336', '#ff9800']
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: currentChartType === 'pie' } }
-      }
-    });
 
     document.getElementById("summaryTable").innerHTML = `
       <thead><tr><th>Category</th><th>Amount (Ksh)</th></tr></thead>
@@ -226,50 +199,88 @@
     `;
 
     const incomeTable = $('#incomeDetails');
-    const incomeRows = allIncome.filter(r => formatMonth(r.Date) === month).map(r =>
+    const incomeRows = allIncome.filter(r => formatMonth(r.Date) === selectedMonth).map(r =>
       `<tr><td>${r.Date}</td><td>${r.Name}</td><td>${r.Amount}</td><td>${r.Phone}</td></tr>`
     ).join('');
     incomeTable.html(`<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr></thead><tbody>${incomeRows}</tbody>`);
     if (!$.fn.DataTable.isDataTable('#incomeDetails')) incomeTable.DataTable();
 
     const expenseTable = $('#expenditureDetails');
-    const expenseRows = allExpense.filter(r => formatMonth(r.Date) === month).map(r => {
-      const missing = !r["Transaction Cost"] || r["Transaction Cost"].trim() === "";
-      return `<tr${missing ? ' class="missing-cost"' : ''}><td>${r.Date}</td><td>${r.Item}</td><td>${r.Amount}</td><td>${r["Transaction Cost"] || "0.00"}</td></tr>`;
+    const expenseRows = allExpense.filter(r => formatMonth(r.Date) === selectedMonth).map(r => {
+      return `<tr><td>${r.Date}</td><td>${r.Item}</td><td>${r.Amount}</td><td>${r["Transaction Cost"] || "0.00"}</td></tr>`;
     }).join('');
     expenseTable.html(`<thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead><tbody>${expenseRows}</tbody>`);
     if (!$.fn.DataTable.isDataTable('#expenditureDetails')) expenseTable.DataTable();
   }
 
   async function downloadPDF() {
-    const element = document.getElementById("contentToExport");
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save("full-audit.pdf");
+    const pdf = new jsPDF();
+    let y = 10;
+    pdf.setFontSize(14);
+    pdf.text("TEXNET HOME FIBER - " + selectedMonth + " Financial Audit", 10, y);
+    y += 10;
+
+    pdf.setFontSize(12);
+    pdf.text("Summary:", 10, y);
+    y += 7;
+    const summary = document.querySelectorAll('#summaryTable tbody tr');
+    summary.forEach(row => {
+      const cols = row.querySelectorAll('td');
+      if (cols.length === 2) {
+        pdf.text(`${cols[0].innerText}: ${cols[1].innerText}`, 12, y);
+        y += 6;
+      }
+    });
+
+    y += 6;
+    pdf.setFontSize(12);
+    pdf.text("Income Details:", 10, y);
+    y += 7;
+    const income = allIncome.filter(r => formatMonth(r.Date) === selectedMonth);
+    income.forEach(r => {
+      if (y > 270) { pdf.addPage(); y = 10; }
+      pdf.text(`${r.Date} | ${r.Name} | ${r.Amount} | ${r.Phone}`, 12, y);
+      y += 6;
+    });
+
+    y += 6;
+    pdf.setFontSize(12);
+    pdf.text("Expenditure Details:", 10, y);
+    y += 7;
+    const expense = allExpense.filter(r => formatMonth(r.Date) === selectedMonth);
+    expense.forEach(r => {
+      if (y > 270) { pdf.addPage(); y = 10; }
+      pdf.text(`${r.Date} | ${r.Item} | ${r.Amount} | ${r["Transaction Cost"] || '0.00'}`, 12, y);
+      y += 6;
+    });
+
+    pdf.save(`TEXNET-${selectedMonth.replace(/ /g, '_')}-Audit.pdf`);
   }
 
   function downloadExcel() {
-    const month = document.getElementById("monthSelect").value;
-    const income = incomeMap[month] || 0;
-    const expense = expenseMap[month]?.exp || 0;
-    const cost = expenseMap[month]?.cost || 0;
-    const data = [["Category", "Amount"],
-      ["Income", income],
-      ["Expenditure", expense],
-      ["Transaction Cost", cost],
-      ["Net", income - expense - cost]];
-    const ws = XLSX.utils.aoa_to_sheet(data);
+    const incomeData = [
+      ["Income Details"],
+      ["Date", "Name", "Amount", "Phone"],
+      ...allIncome.map(row => [row.Date, row.Name, row.Amount, row.Phone])
+    ];
+
+    const expenseData = [
+      ["Expenditure Details"],
+      ["Date", "Item", "Amount", "Transaction Cost"],
+      ...allExpense.map(row => [row.Date, row.Item, row.Amount, row["Transaction Cost"]])
+    ];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Audit");
-    XLSX.writeFile(wb, "audit.xlsx");
+    const wsIncome = XLSX.utils.aoa_to_sheet(incomeData);
+    const wsExpense = XLSX.utils.aoa_to_sheet(expenseData);
+
+    XLSX.utils.book_append_sheet(wb, wsIncome, "Income");
+    XLSX.utils.book_append_sheet(wb, wsExpense, "Expenditure");
+
+    XLSX.writeFile(wb, "full-audit.xlsx");
   }
 
   processData();
 </script></body>
-           </html>
+</html>
