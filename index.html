@@ -37,8 +37,20 @@
       Papa.parse(url, {
         download: true,
         header: true,
-        complete: results => callback(results.data)
+        complete: results => {
+          const cleaned = results.data.map(cleanHeaders);
+          callback(cleaned);
+        }
       });
+    }
+
+    function cleanHeaders(row) {
+      const newRow = {};
+      Object.keys(row).forEach(k => {
+        const cleanKey = k.replace(/\uFEFF/g, '').trim();
+        newRow[cleanKey] = row[k];
+      });
+      return newRow;
     }
 
     function formatMonth(dateStr) {
@@ -49,7 +61,7 @@
       return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
     }
 
-    function groupByMonth(data, dateKey, isIncome = false) {
+    function groupByMonth(data, dateKey) {
       return data.reduce((acc, row) => {
         const month = formatMonth(row[dateKey]);
         if (!month) return acc;
@@ -73,8 +85,7 @@
       let totalIncome = 0, totalExpenditure = 0, totalCost = 0;
 
       incomeRows.forEach(row => {
-        let rawAmount = row.Amount || row["Amount "] || "";
-        let amount = parseFloat(rawAmount.replace("Ksh", "").replace(/,/g, "").trim());
+        let amount = parseFloat((row.Amount || "").replace("Ksh", "").replace(/,/g, "").trim());
         amount = isNaN(amount) ? 0 : amount;
         totalIncome += amount;
 
@@ -89,11 +100,8 @@
       });
 
       expenditureRows.forEach(row => {
-        let rawAmount = row.Amount || row["Amount "] || "";
-        let rawCost = row["Transaction Cost"] || row["Transaction Cost "] || "";
-
-        let amount = parseFloat(rawAmount.replace("Ksh", "").replace(/,/g, "").trim());
-        let cost = parseFloat(rawCost.replace("Ksh", "").replace(/,/g, "").trim());
+        let amount = parseFloat((row.Amount || "").replace("Ksh", "").replace(/,/g, "").trim());
+        let cost = parseFloat((row["Transaction Cost"] || "").replace("Ksh", "").replace(/,/g, "").trim());
 
         amount = isNaN(amount) ? 0 : amount;
         cost = isNaN(cost) ? 0 : cost;
@@ -135,7 +143,7 @@
     }
 
     parseCSV(incomeCSV, data => {
-      incomeData = groupByMonth(data, "Date", true);
+      incomeData = groupByMonth(data, "Date");
       parseCSV(expenditureCSV, data2 => {
         expenditureData = groupByMonth(data2, "Date");
         populateMonthSelect();
