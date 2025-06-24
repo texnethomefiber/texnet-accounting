@@ -85,14 +85,11 @@
     <h2>Monthly Financial Audit</h2>
     <div class="btn-group">
       <button onclick="toggleTheme()">Toggle Dark/Light</button>
-      <button onclick="toggleChartType()">Toggle Pie/Bar</button>
       <button onclick="downloadPDF()">Export to PDF</button>
       <button onclick="downloadExcel()">Export to Excel</button>
     </div>
     <select id="monthSelect" onchange="drawSelectedMonth()"></select>
-  </div><canvas id="chartCanvas"></canvas>
-
-  <table id="summaryTable"></table>
+  </div>  <table id="summaryTable"></table>
   <h3 style="text-align:center">Income Details</h3>
   <table id="incomeDetails" class="display"></table>
   <h3 style="text-align:center">Expenditure Details</h3>
@@ -103,8 +100,6 @@
   const EXPENSE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
 
   let incomeMap = {}, expenseMap = {}, months = [], allIncome = [], allExpense = [];
-  let currentChart;
-  let currentChartType = 'bar';
   let selectedMonth = "";
 
   function checkPassword() {
@@ -119,11 +114,6 @@
   function toggleTheme() {
     const body = document.body;
     body.className = body.className === "light" ? "dark" : "light";
-  }
-
-  function toggleChartType() {
-    currentChartType = currentChartType === 'bar' ? 'pie' : 'bar';
-    drawSelectedMonth();
   }
 
   function formatMonth(dateStr) {
@@ -202,13 +192,13 @@
     const incomeRows = allIncome.filter(r => formatMonth(r.Date) === selectedMonth).map(r =>
       `<tr><td>${r.Date}</td><td>${r.Name}</td><td>${r.Amount}</td><td>${r.Phone}</td></tr>`
     ).join('');
-    incomeTable.html(`<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr></thead><tbody>${incomeRows}</tbody>`);
+    incomeTable.html(`<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></thead><tbody>${incomeRows}</tbody>`);
     if (!$.fn.DataTable.isDataTable('#incomeDetails')) incomeTable.DataTable();
 
     const expenseTable = $('#expenditureDetails');
-    const expenseRows = allExpense.filter(r => formatMonth(r.Date) === selectedMonth).map(r => {
-      return `<tr><td>${r.Date}</td><td>${r.Item}</td><td>${r.Amount}</td><td>${r["Transaction Cost"] || "0.00"}</td></tr>`;
-    }).join('');
+    const expenseRows = allExpense.filter(r => formatMonth(r.Date) === selectedMonth).map(r =>
+      `<tr><td>${r.Date}</td><td>${r.Item}</td><td>${r.Amount}</td><td>${r["Transaction Cost"] || "0.00"}</td></tr>`
+    ).join('');
     expenseTable.html(`<thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead><tbody>${expenseRows}</tbody>`);
     if (!$.fn.DataTable.isDataTable('#expenditureDetails')) expenseTable.DataTable();
   }
@@ -217,41 +207,64 @@
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
     let y = 10;
+    const pageHeight = pdf.internal.pageSize.height;
     pdf.setFontSize(14);
     pdf.text("TEXNET HOME FIBER - " + selectedMonth + " Financial Audit", 10, y);
     y += 10;
 
     pdf.setFontSize(12);
+    pdf.setFont(undefined, 'bold');
     pdf.text("Summary:", 10, y);
     y += 7;
+    pdf.setFont(undefined, 'normal');
     const summary = document.querySelectorAll('#summaryTable tbody tr');
     summary.forEach(row => {
       const cols = row.querySelectorAll('td');
       if (cols.length === 2) {
-        pdf.text(`${cols[0].innerText}: ${cols[1].innerText}`, 12, y);
+        pdf.text(cols[0].innerText, 12, y);
+        pdf.text(cols[1].innerText, 110, y, { align: 'right' });
         y += 6;
       }
     });
 
-    y += 6;
-    pdf.setFontSize(12);
+    y += 8;
+    pdf.setFont(undefined, 'bold');
     pdf.text("Income Details:", 10, y);
     y += 7;
+    pdf.setFont(undefined, 'bold');
+    pdf.text("Date", 12, y);
+    pdf.text("Name", 50, y);
+    pdf.text("Amount", 120, y);
+    pdf.text("Phone", 160, y);
+    y += 6;
+    pdf.setFont(undefined, 'normal');
     const income = allIncome.filter(r => formatMonth(r.Date) === selectedMonth);
     income.forEach(r => {
-      if (y > 270) { pdf.addPage(); y = 10; }
-      pdf.text(`${r.Date} | ${r.Name} | ${r.Amount} | ${r.Phone}`, 12, y);
+      if (y > pageHeight - 10) { pdf.addPage(); y = 10; }
+      pdf.text(r.Date, 12, y);
+      pdf.text(r.Name || '', 50, y);
+      pdf.text(r.Amount || '', 120, y);
+      pdf.text(r.Phone || '', 160, y);
       y += 6;
     });
 
-    y += 6;
-    pdf.setFontSize(12);
+    y += 8;
+    pdf.setFont(undefined, 'bold');
     pdf.text("Expenditure Details:", 10, y);
     y += 7;
+    pdf.text("Date", 12, y);
+    pdf.text("Item", 50, y);
+    pdf.text("Amount", 120, y);
+    pdf.text("Transaction Cost", 160, y);
+    y += 6;
+    pdf.setFont(undefined, 'normal');
     const expense = allExpense.filter(r => formatMonth(r.Date) === selectedMonth);
     expense.forEach(r => {
-      if (y > 270) { pdf.addPage(); y = 10; }
-      pdf.text(`${r.Date} | ${r.Item} | ${r.Amount} | ${r["Transaction Cost"] || '0.00'}`, 12, y);
+      if (y > pageHeight - 10) { pdf.addPage(); y = 10; }
+      pdf.text(r.Date, 12, y);
+      pdf.text(r.Item || '', 50, y);
+      pdf.text(r.Amount || '', 120, y);
+      pdf.text((r["Transaction Cost"] || '0.00'), 160, y);
       y += 6;
     });
 
