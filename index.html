@@ -4,6 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
   <style>
@@ -81,21 +82,23 @@
     <input type="password" id="loginPassword"><br><br>
     <button onclick="checkPassword()">Login</button>
   </div>
-</div><div class="header-box">
-  <h1>TEXNET HOME FIBER</h1>
-  <h2>Monthly Financial Audit</h2>
-  <div class="btn-group">
-    <button onclick="toggleTheme()">Toggle Dark/Light</button>
-    <button onclick="toggleChartType()">Toggle Pie/Bar</button>
-    <button onclick="downloadPDF()">Export to PDF</button>
-    <button onclick="downloadExcel()">Export to Excel</button>
-  </div>
-  <select id="monthSelect" onchange="drawSelectedMonth()"></select>
-</div><canvas id="chartCanvas"></canvas>
+</div><div id="contentToExport">
+  <div class="header-box">
+    <h1>TEXNET HOME FIBER</h1>
+    <h2>Monthly Financial Audit</h2>
+    <div class="btn-group">
+      <button onclick="toggleTheme()">Toggle Dark/Light</button>
+      <button onclick="toggleChartType()">Toggle Pie/Bar</button>
+      <button onclick="downloadPDF()">Export to PDF</button>
+      <button onclick="downloadExcel()">Export to Excel</button>
+    </div>
+    <select id="monthSelect" onchange="drawSelectedMonth()"></select>
+  </div><canvas id="chartCanvas"></canvas>
 
-<table id="summaryTable"></table><h3 style="text-align:center">Income Details</h3>
-<table id="incomeDetails"></table><h3 style="text-align:center">Expenditure Details</h3>
-<table id="expenditureDetails"></table><script>
+  <table id="summaryTable"></table>  <h3 style="text-align:center">Income Details</h3>
+  <table id="incomeDetails"></table>  <h3 style="text-align:center">Expenditure Details</h3>
+  <table id="expenditureDetails"></table>
+</div><script>
   const PASSWORD = "texnet123";
   const INCOME_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
   const EXPENSE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
@@ -214,33 +217,30 @@
       </tbody>
     `;
 
-    // Income Table
     const incomeRows = allIncome.filter(r => formatMonth(r.Date) === month).map(r =>
       `<tr><td>${r.Date}</td><td>${r.Name}</td><td>${r.Amount}</td><td>${r.Phone}</td></tr>`
     ).join('');
     document.getElementById("incomeDetails").innerHTML = `<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr></thead><tbody>${incomeRows}</tbody>`;
 
-    // Expense Table
     const expenseRows = allExpense.filter(r => formatMonth(r.Date) === month).map(r =>
       `<tr><td>${r.Date}</td><td>${r.Item}</td><td>${r.Amount}</td><td>${r["Transaction Cost"] || "0.00"}</td></tr>`
     ).join('');
     document.getElementById("expenditureDetails").innerHTML = `<thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead><tbody>${expenseRows}</tbody>`;
   }
 
-  function downloadPDF() {
+  async function downloadPDF() {
+    const element = document.getElementById("contentToExport");
+    const canvas = await html2canvas(element);
+    const imgData = canvas.toDataURL("image/png");
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const month = document.getElementById("monthSelect").value;
-    const income = incomeMap[month] || 0;
-    const expense = expenseMap[month]?.exp || 0;
-    const cost = expenseMap[month]?.cost || 0;
-    const net = income - expense - cost;
-    doc.text(`TEXNET HOME FIBER - Monthly Audit (${month})`, 10, 10);
-    doc.text(`Income: Ksh ${income.toFixed(2)}`, 10, 20);
-    doc.text(`Expenditure: Ksh ${expense.toFixed(2)}`, 10, 30);
-    doc.text(`Transaction Cost: Ksh ${cost.toFixed(2)}`, 10, 40);
-    doc.text(`Net: Ksh ${net.toFixed(2)}`, 10, 50);
-    doc.save("audit.pdf");
+    const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("full-audit.pdf");
   }
 
   function downloadExcel() {
@@ -261,4 +261,4 @@
 
   processData();
 </script></body>
-</html>
+        </html>
