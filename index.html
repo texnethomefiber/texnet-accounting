@@ -3,27 +3,90 @@
 <head>
   <title>Monthly Financial Auditor</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: auto; }
-    h2, h3 { color: #333; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f9f9f9; }
-    select { padding: 5px; font-size: 1em; }
-    .summary p { margin: 4px 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      color: #005792;
+    }
+
+    h3 {
+      margin-top: 40px;
+      color: #00406b;
+    }
+
+    select {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: left;
+    }
+
+    th {
+      background-color: #005792;
+      color: white;
+    }
+
+    tr:hover {
+      background-color: #f5fbff;
+    }
+
+    .summary {
+      background: #e3f2fd;
+      border-left: 6px solid #2196F3;
+      padding: 15px 20px;
+      border-radius: 5px;
+      margin-top: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .summary p {
+      margin: 6px 0;
+      font-weight: 500;
+    }
+
+    label {
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h2>Monthly Financial Auditor</h2>
+  <h2>📊 Monthly Financial Auditor</h2>
 
   <label for="monthSelect">Select Month:</label>
   <select id="monthSelect"></select>
 
   <div class="summary" id="summary"></div>
 
-  <h3>Income</h3>
+  <h3>📥 Income</h3>
   <table id="incomeTable"></table>
 
-  <h3>Expenditure</h3>
+  <h3>📤 Expenditure</h3>
   <table id="expenditureTable"></table>
 
   <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
@@ -123,10 +186,10 @@
 
       summaryDiv.innerHTML = `
         <h3>Summary for ${month}</h3>
-        <p><strong>Total Income:</strong> ${totalIncome.toFixed(2)}</p>
-        <p><strong>Total Expenditure:</strong> ${totalExpenditure.toFixed(2)}</p>
-        <p><strong>Transaction Costs:</strong> ${totalCost.toFixed(2)}</p>
-        <p><strong>Net Balance:</strong> ${net.toFixed(2)}</p>
+        <p><strong>Total Income:</strong> Ksh ${totalIncome.toFixed(2)}</p>
+        <p><strong>Total Expenditure:</strong> Ksh ${totalExpenditure.toFixed(2)}</p>
+        <p><strong>Transaction Costs:</strong> Ksh ${totalCost.toFixed(2)}</p>
+        <p><strong>Net Balance:</strong> Ksh ${net.toFixed(2)}</p>
       `;
     }
 
@@ -142,8 +205,8 @@
 
       if (sortedMonths.length) {
         const defaultMonth = sortedMonths[sortedMonths.length - 1]; // most recent
-        select.value = defaultMonth; // set dropdown to match
-        renderTables(defaultMonth); // render same
+        select.value = defaultMonth;
+        renderTables(defaultMonth);
       }
     }
 
