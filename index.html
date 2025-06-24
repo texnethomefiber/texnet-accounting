@@ -45,7 +45,7 @@
       display: block;
     }
     table {
-      width: 80%;
+      width: 90%;
       margin: 20px auto;
       border-collapse: collapse;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -93,12 +93,14 @@
   <select id="monthSelect" onchange="drawSelectedMonth()"></select>
 </div><canvas id="chartCanvas"></canvas>
 
-<table id="summaryTable"></table><script>
+<table id="summaryTable"></table><h3 style="text-align:center">Income Details</h3>
+<table id="incomeDetails"></table><h3 style="text-align:center">Expenditure Details</h3>
+<table id="expenditureDetails"></table><script>
   const PASSWORD = "texnet123";
   const INCOME_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
   const EXPENSE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
 
-  let incomeMap = {}, expenseMap = {}, months = [];
+  let incomeMap = {}, expenseMap = {}, months = [], allIncome = [], allExpense = [];
   let currentChart;
   let currentChartType = 'bar';
 
@@ -133,6 +135,7 @@
       download: true,
       header: true,
       complete: function(results) {
+        allIncome = results.data;
         results.data.forEach(row => {
           const month = formatMonth(row.Date);
           if (!month) return;
@@ -148,6 +151,7 @@
       download: true,
       header: true,
       complete: function(results) {
+        allExpense = results.data;
         results.data.forEach(row => {
           const month = formatMonth(row.Date);
           if (!month) return;
@@ -209,6 +213,18 @@
         <tr><td><strong>Net</strong></td><td><strong>${net.toFixed(2)}</strong></td></tr>
       </tbody>
     `;
+
+    // Income Table
+    const incomeRows = allIncome.filter(r => formatMonth(r.Date) === month).map(r =>
+      `<tr><td>${r.Date}</td><td>${r.Name}</td><td>${r.Amount}</td><td>${r.Phone}</td></tr>`
+    ).join('');
+    document.getElementById("incomeDetails").innerHTML = `<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr></thead><tbody>${incomeRows}</tbody>`;
+
+    // Expense Table
+    const expenseRows = allExpense.filter(r => formatMonth(r.Date) === month).map(r =>
+      `<tr><td>${r.Date}</td><td>${r.Item}</td><td>${r.Amount}</td><td>${r["Transaction Cost"] || "0.00"}</td></tr>`
+    ).join('');
+    document.getElementById("expenditureDetails").innerHTML = `<thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead><tbody>${expenseRows}</tbody>`;
   }
 
   function downloadPDF() {
@@ -245,4 +261,4 @@
 
   processData();
 </script></body>
-  </html>
+</html>
