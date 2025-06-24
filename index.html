@@ -42,21 +42,16 @@
     }
 
     function formatMonth(dateStr) {
-      const date = new Date(dateStr.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$2/$1/$3'));
-      if (isNaN(date)) return null;
-      return date.toLocaleString('default', { month: 'long', year: 'numeric' });
-    }
-
-    function formatMonthIncome(dateStr) {
-      const parts = dateStr.split(/[\/\s:]/); // DD/MM/YYYY HH:MM:SS
-      const [day, month, year] = parts;
+      const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (!match) return null;
+      const [_, day, month, year] = match;
       const date = new Date(`${month}/${day}/${year}`);
       return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
     }
 
     function groupByMonth(data, dateKey, isIncome = false) {
       return data.reduce((acc, row) => {
-        const month = isIncome ? formatMonthIncome(row[dateKey]) : formatMonth(row[dateKey]);
+        const month = formatMonth(row[dateKey]);
         if (!month) return acc;
         if (!acc[month]) acc[month] = [];
         acc[month].push(row);
@@ -78,30 +73,43 @@
       let totalIncome = 0, totalExpenditure = 0, totalCost = 0;
 
       incomeRows.forEach(row => {
-        const amount = parseFloat(row.Amount || 0);
+        let rawAmount = row.Amount || row["Amount "] || "";
+        let amount = parseFloat(rawAmount.replace("Ksh", "").replace(/,/g, "").trim());
+        amount = isNaN(amount) ? 0 : amount;
         totalIncome += amount;
-        incomeTable.innerHTML += `<tr><td>${row.Date}</td><td>${row.Name}</td><td>${amount.toFixed(2)}</td><td>${row.Phone}</td></tr>`;
+
+        incomeTable.innerHTML += `
+          <tr>
+            <td>${row.Date}</td>
+            <td>${row.Name}</td>
+            <td>${amount.toFixed(2)}</td>
+            <td>${row.Phone}</td>
+          </tr>
+        `;
       });
 
       expenditureRows.forEach(row => {
-  let amount = parseFloat((row.Amount || "").replace("Ksh", "").replace(/,/g, "").trim());
-  let cost = parseFloat((row["Transaction Cost"] || "").replace("Ksh", "").replace(/,/g, "").trim());
+        let rawAmount = row.Amount || row["Amount "] || "";
+        let rawCost = row["Transaction Cost"] || row["Transaction Cost "] || "";
 
-  amount = isNaN(amount) ? 0 : amount;
-  cost = isNaN(cost) ? 0 : cost;
+        let amount = parseFloat(rawAmount.replace("Ksh", "").replace(/,/g, "").trim());
+        let cost = parseFloat(rawCost.replace("Ksh", "").replace(/,/g, "").trim());
 
-  totalExpenditure += amount;
-  totalCost += cost;
+        amount = isNaN(amount) ? 0 : amount;
+        cost = isNaN(cost) ? 0 : cost;
 
-  expenditureTable.innerHTML += `
-    <tr>
-      <td>${row.Date}</td>
-      <td>${row.Item}</td>
-      <td>${amount.toFixed(2)}</td>
-      <td>${cost.toFixed(2)}</td>
-    </tr>
-  `;
-});
+        totalExpenditure += amount;
+        totalCost += cost;
+
+        expenditureTable.innerHTML += `
+          <tr>
+            <td>${row.Date}</td>
+            <td>${row.Item}</td>
+            <td>${amount.toFixed(2)}</td>
+            <td>${cost.toFixed(2)}</td>
+          </tr>
+        `;
+      });
 
       const net = totalIncome - totalExpenditure - totalCost;
 
