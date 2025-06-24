@@ -1,6 +1,7 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html>
+<html>
 <head>
-  <title>Monthly Financial Auditor</title>
+  <title>TEXNET HOME FIBER Monthly Financial Audit</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -10,145 +11,169 @@
       max-width: 1200px;
       margin: auto;
       color: #333;
-    }h2 {
-  text-align: center;
-  color: #005792;
-}
+    }
 
-h3 {
-  margin-top: 40px;
-  color: #00406b;
-}
+    .header-box {
+      background-color: #007acc;
+      color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
 
-label, select {
-  display: block;
-  margin-top: 10px;
-}
+    .header-box h1 {
+      margin: 0;
+      font-size: 2em;
+    }
 
-select {
-  padding: 10px;
-  font-size: 1em;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  width: 100%;
-  max-width: 300px;
-}
+    .header-box h2 {
+      margin-top: 10px;
+      font-weight: normal;
+      font-size: 1.2em;
+    }
 
-.summary {
-  background: #e3f2fd;
-  border-left: 6px solid #2196F3;
-  padding: 15px 20px;
-  border-radius: 5px;
-  margin-top: 20px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-}
+    h3 {
+      margin-top: 40px;
+      color: #00406b;
+    }
 
-.summary p {
-  margin: 6px 0;
-  font-weight: 500;
-}
+    label, select {
+      display: block;
+      margin-top: 10px;
+    }
 
-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-top: 10px;
-  background-color: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
+    select {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 100%;
+      max-width: 300px;
+    }
 
-th, td {
-  text-align: left;
-  padding: 12px 14px;
-}
+    .summary {
+      background: #e3f2fd;
+      border-left: 6px solid #2196F3;
+      padding: 15px 20px;
+      border-radius: 5px;
+      margin-top: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
 
-th {
-  background-color: #007acc;
-  color: #fff;
-  font-weight: 600;
-  border-bottom: 2px solid #005f99;
-}
+    .summary p {
+      margin: 6px 0;
+      font-weight: 500;
+    }
 
-td {
-  border-bottom: 1px solid #f0f0f0;
-}
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 10px;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
 
-tr:nth-child(even) td {
-  background-color: #f9fbfc;
-}
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+    }
 
-tr:hover td {
-  background-color: #e6f4ff;
-}
+    th {
+      background-color: #007acc;
+      color: #fff;
+      font-weight: 600;
+      border-bottom: 2px solid #005f99;
+    }
 
-th.sortable {
-  cursor: pointer;
-}
+    td {
+      border-bottom: 1px solid #f0f0f0;
+    }
 
-tr.highlight-income {
-  background-color: #e6f9e6 !important;
-}
+    tr:nth-child(even) td {
+      background-color: #f9fbfc;
+    }
 
-tr.highlight-expense {
-  background-color: #ffe6e6 !important;
-}
+    tr:hover td {
+      background-color: #e6f4ff;
+    }
 
-@media screen and (max-width: 768px) {
-  table, thead, tbody, th, td, tr {
-    display: block;
-  }
+    th.sortable {
+      cursor: pointer;
+    }
 
-  thead tr {
-    display: none;
-  }
+    tr.highlight-income {
+      background-color: #e6f9e6 !important;
+    }
 
-  tr {
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    background: #fff;
-  }
+    tr.highlight-expense {
+      background-color: #ffe6e6 !important;
+    }
 
-  td {
-    border: none;
-    position: relative;
-    padding-left: 50%;
-  }
+    @media screen and (max-width: 768px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
 
-  td::before {
-    position: absolute;
-    top: 12px;
-    left: 14px;
-    width: 45%;
-    white-space: nowrap;
-    font-weight: bold;
-  }
+      thead tr {
+        display: none;
+      }
 
-  #incomeTable td:nth-of-type(1)::before { content: "Date"; }
-  #incomeTable td:nth-of-type(2)::before { content: "Name"; }
-  #incomeTable td:nth-of-type(3)::before { content: "Amount"; }
-  #incomeTable td:nth-of-type(4)::before { content: "Phone"; }
+      tr {
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        background: #fff;
+      }
 
-  #expenditureTable td:nth-of-type(1)::before { content: "Date"; }
-  #expenditureTable td:nth-of-type(2)::before { content: "Item"; }
-  #expenditureTable td:nth-of-type(3)::before { content: "Amount"; }
-  #expenditureTable td:nth-of-type(4)::before { content: "Transaction Cost"; }
-}
+      td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+      }
 
+      td::before {
+        position: absolute;
+        top: 12px;
+        left: 14px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+
+      #incomeTable td:nth-of-type(1)::before { content: "Date"; }
+      #incomeTable td:nth-of-type(2)::before { content: "Name"; }
+      #incomeTable td:nth-of-type(3)::before { content: "Amount"; }
+      #incomeTable td:nth-of-type(4)::before { content: "Phone"; }
+
+      #expenditureTable td:nth-of-type(1)::before { content: "Date"; }
+      #expenditureTable td:nth-of-type(2)::before { content: "Item"; }
+      #expenditureTable td:nth-of-type(3)::before { content: "Amount"; }
+      #expenditureTable td:nth-of-type(4)::before { content: "Transaction Cost"; }
+    }
   </style>
 </head>
 <body>
-  <h2>📊 Monthly Financial Auditor</h2>
+  <div class="header-box">
+    <h1>TEXNET HOME FIBER</h1>
+    <h2>Monthly Financial Audit</h2>
+  </div>
+
   <label for="monthSelect">Select Month:</label>
   <select id="monthSelect"></select>
   <div class="summary" id="summary"></div>
   <h3>📥 Income</h3>
   <table id="incomeTable"></table>
   <h3>📤 Expenditure</h3>
-  <table id="expenditureTable"></table>  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>  <script>
+  <table id="expenditureTable"></table>
+
+  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
+  <script>
     const incomeCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
     const expenditureCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
 
@@ -176,7 +201,7 @@ tr.highlight-expense {
     }
 
     function formatMonth(dateStr) {
-      const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      const match = dateStr.match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})/);
       if (!match) return null;
       const [_, day, month, year] = match;
       const date = new Date(`${month}/${day}/${year}`);
@@ -327,5 +352,6 @@ tr.highlight-expense {
         populateMonthSelect();
       });
     });
-  </script></body>
-</html>
+  </script>
+</body>
+  </html>
