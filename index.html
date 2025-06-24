@@ -95,10 +95,6 @@ tr.highlight-expense {
   background-color: #ffe6e6 !important;
 }
 
-tr.highlight-missing-cost {
-  background-color: #fff9cc !important;
-}
-
 @media screen and (max-width: 768px) {
   table, thead, tbody, th, td, tr {
     display: block;
@@ -145,6 +141,191 @@ tr.highlight-missing-cost {
   </style>
 </head>
 <body>
-  <!-- HTML content and script stays unchanged -->
-</body>
+  <h2>📊 Monthly Financial Auditor</h2>
+  <label for="monthSelect">Select Month:</label>
+  <select id="monthSelect"></select>
+  <div class="summary" id="summary"></div>
+  <h3>📥 Income</h3>
+  <table id="incomeTable"></table>
+  <h3>📤 Expenditure</h3>
+  <table id="expenditureTable"></table>  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>  <script>
+    const incomeCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
+    const expenditureCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
+
+    let incomeData = {}, expenditureData = {};
+    let itemSortAsc = true, incomeDateSortAsc = true, expenditureDateSortAsc = true;
+
+    function parseCSV(url, callback) {
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        complete: results => {
+          const cleaned = results.data.map(cleanHeaders);
+          callback(cleaned);
+        }
+      });
+    }
+
+    function cleanHeaders(row) {
+      const newRow = {};
+      Object.keys(row).forEach(k => {
+        const cleanKey = k.replace(/\uFEFF/g, '').trim();
+        newRow[cleanKey] = row[k];
+      });
+      return newRow;
+    }
+
+    function formatMonth(dateStr) {
+      const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (!match) return null;
+      const [_, day, month, year] = match;
+      const date = new Date(`${month}/${day}/${year}`);
+      return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
+
+    function groupByMonth(data, dateKey) {
+      const grouped = {};
+      data.forEach(row => {
+        const month = formatMonth(row[dateKey]);
+        if (!month) return;
+        if (!grouped[month]) grouped[month] = [];
+        grouped[month].push(row);
+      });
+      Object.keys(grouped).forEach(month => {
+        grouped[month].sort((a, b) => {
+          const dateA = new Date((a[dateKey] || "").split(" ")[0].split("/").reverse().join("/"));
+          const dateB = new Date((b[dateKey] || "").split(" ")[0].split("/").reverse().join("/"));
+          return dateB - dateA;
+        });
+      });
+      return grouped;
+    }
+
+    function renderTables(month) {
+      const incomeRows = incomeData[month] || [];
+      const expenditureRows = expenditureData[month] || [];
+      const incomeTable = document.getElementById('incomeTable');
+      const expenditureTable = document.getElementById('expenditureTable');
+      const summaryDiv = document.getElementById('summary');
+      const arrow = dir => dir ? '⬆' : '⬇';
+
+      incomeTable.innerHTML = `
+        <tr>
+          <th id="sortIncomeDate" class="sortable">Date ${arrow(incomeDateSortAsc)}</th>
+          <th>Name</th>
+          <th>Amount</th>
+          <th>Phone</th>
+        </tr>
+      `;
+
+      expenditureTable.innerHTML = `
+        <tr>
+          <th id="sortExpenditureDate" class="sortable">Date ${arrow(expenditureDateSortAsc)}</th>
+          <th id="sortItem" class="sortable">Item ${arrow(itemSortAsc)}</th>
+          <th>Amount</th>
+          <th>Transaction Cost</th>
+        </tr>
+      `;
+
+      let totalIncome = 0, totalExpenditure = 0, totalCost = 0;
+
+      incomeRows.forEach(row => {
+        let amount = parseFloat((row.Amount || "").replace("Ksh", "").replace(/,/g, "").trim());
+        amount = isNaN(amount) ? 0 : amount;
+        totalIncome += amount;
+        const incomeClass = amount >= 10000 ? "highlight-income" : "";
+        incomeTable.innerHTML += `
+          <tr class="${incomeClass}">
+            <td>${row.Date}</td>
+            <td>${row.Name}</td>
+            <td>Ksh ${amount.toFixed(2)}</td>
+            <td>${row.Phone}</td>
+          </tr>
+        `;
+      });
+
+      expenditureRows.forEach(row => {
+        let amount = parseFloat((row.Amount || "").replace("Ksh", "").replace(/,/g, "").trim());
+        let cost = parseFloat((row["Transaction Cost"] || "").replace("Ksh", "").replace(/,/g, "").trim());
+        amount = isNaN(amount) ? 0 : amount;
+        cost = isNaN(cost) ? 0 : cost;
+        totalExpenditure += amount;
+        totalCost += cost;
+        let expenseClass = amount >= 5000 ? "highlight-expense" : "";
+        expenditureTable.innerHTML += `
+          <tr class="${expenseClass}">
+            <td>${row.Date}</td>
+            <td>${row.Item}</td>
+            <td>Ksh ${amount.toFixed(2)}</td>
+            <td>Ksh ${cost.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+
+      const net = totalIncome - totalExpenditure - totalCost;
+      summaryDiv.innerHTML = `
+        <h3>Summary for ${month}</h3>
+        <p><strong>Total Income:</strong> Ksh ${totalIncome.toFixed(2)}</p>
+        <p><strong>Total Expenditure:</strong> Ksh ${totalExpenditure.toFixed(2)}</p>
+        <p><strong>Transaction Costs:</strong> Ksh ${totalCost.toFixed(2)}</p>
+        <p><strong>Net Balance:</strong> Ksh ${net.toFixed(2)}</p>
+      `;
+    }
+
+    function populateMonthSelect() {
+      const allMonths = new Set([...Object.keys(incomeData), ...Object.keys(expenditureData)]);
+      const sortedMonths = Array.from(allMonths).sort((a, b) => new Date(a) - new Date(b));
+      const select = document.getElementById('monthSelect');
+      select.innerHTML = sortedMonths.map(m => `<option value="${m}">${m}</option>`).join("");
+      select.onchange = () => renderTables(select.value);
+      if (sortedMonths.length) {
+        const defaultMonth = sortedMonths[sortedMonths.length - 1];
+        select.value = defaultMonth;
+        renderTables(defaultMonth);
+      }
+    }
+
+    document.addEventListener("click", function (e) {
+      const selectedMonth = document.getElementById("monthSelect").value;
+      if (e.target.id === "sortItem") {
+        const data = expenditureData[selectedMonth];
+        if (!data) return;
+        data.sort((a, b) => itemSortAsc
+          ? (a.Item || "").localeCompare(b.Item || "")
+          : (b.Item || "").localeCompare(a.Item || ""));
+        itemSortAsc = !itemSortAsc;
+        renderTables(selectedMonth);
+      }
+      if (e.target.id === "sortIncomeDate") {
+        const data = incomeData[selectedMonth];
+        if (!data) return;
+        data.sort((a, b) => {
+          const dateA = new Date((a.Date || "").split(" ")[0].split("/").reverse().join("/"));
+          const dateB = new Date((b.Date || "").split(" ")[0].split("/").reverse().join("/"));
+          return incomeDateSortAsc ? dateA - dateB : dateB - dateA;
+        });
+        incomeDateSortAsc = !incomeDateSortAsc;
+        renderTables(selectedMonth);
+      }
+      if (e.target.id === "sortExpenditureDate") {
+        const data = expenditureData[selectedMonth];
+        if (!data) return;
+        data.sort((a, b) => {
+          const dateA = new Date((a.Date || "").split("/").reverse().join("/"));
+          const dateB = new Date((b.Date || "").split("/").reverse().join("/"));
+          return expenditureDateSortAsc ? dateA - dateB : dateB - dateA;
+        });
+        expenditureDateSortAsc = !expenditureDateSortAsc;
+        renderTables(selectedMonth);
+      }
+    });
+
+    parseCSV(incomeCSV, data => {
+      incomeData = groupByMonth(data, "Date");
+      parseCSV(expenditureCSV, data2 => {
+        expenditureData = groupByMonth(data2, "Date");
+        populateMonthSelect();
+      });
+    });
+  </script></body>
 </html>
