@@ -139,7 +139,12 @@
       const select = document.getElementById('monthSelect');
       select.innerHTML = sortedMonths.map(m => `<option value="${m}">${m}</option>`).join("");
       select.onchange = () => renderTables(select.value);
-      if (sortedMonths.length) renderTables(sortedMonths[sortedMonths.length - 1]);
+
+      if (sortedMonths.length) {
+        const defaultMonth = sortedMonths[sortedMonths.length - 1]; // most recent
+        select.value = defaultMonth; // set dropdown to match
+        renderTables(defaultMonth); // render same
+      }
     }
 
     parseCSV(incomeCSV, data => {
