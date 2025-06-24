@@ -49,7 +49,7 @@
       font-weight: bold;
     }
 
-    /* ✨ Stylish Tables */
+    /* Stylish Tables */
     table {
       width: 100%;
       border-collapse: separate;
@@ -99,6 +99,10 @@
     tr:last-child td:last-child {
       border-bottom-right-radius: 8px;
     }
+
+    #sortItem {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -121,6 +125,7 @@
     const expenditureCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
 
     let incomeData = {}, expenditureData = {};
+    let itemSortAsc = true;
 
     function parseCSV(url, callback) {
       Papa.parse(url, {
@@ -169,7 +174,14 @@
       const summaryDiv = document.getElementById('summary');
 
       incomeTable.innerHTML = "<tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr>";
-      expenditureTable.innerHTML = "<tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr>";
+      expenditureTable.innerHTML = `
+        <tr>
+          <th>Date</th>
+          <th id="sortItem">Item ⬍</th>
+          <th>Amount</th>
+          <th>Transaction Cost</th>
+        </tr>
+      `;
 
       let totalIncome = 0, totalExpenditure = 0, totalCost = 0;
 
@@ -235,6 +247,23 @@
         renderTables(defaultMonth);
       }
     }
+
+    document.addEventListener("click", function (e) {
+      if (e.target && e.target.id === "sortItem") {
+        const selectedMonth = document.getElementById("monthSelect").value;
+        const data = expenditureData[selectedMonth];
+        if (!data) return;
+
+        data.sort((a, b) => {
+          const itemA = (a.Item || "").toLowerCase();
+          const itemB = (b.Item || "").toLowerCase();
+          return itemSortAsc ? itemA.localeCompare(itemB) : itemB.localeCompare(itemA);
+        });
+
+        itemSortAsc = !itemSortAsc;
+        renderTables(selectedMonth);
+      }
+    });
 
     parseCSV(incomeCSV, data => {
       incomeData = groupByMonth(data, "Date");
