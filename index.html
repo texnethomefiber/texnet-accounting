@@ -96,6 +96,7 @@ function toggleTheme() {
 
 function formatMonth(dateStr) {
   const d = new Date(dateStr);
+  if (isNaN(d)) return 'Invalid Date';
   return d.toLocaleString('default', { month: 'long', year: 'numeric' });
 }
 
@@ -106,8 +107,13 @@ function loadData() {
   ]).then(([incomeCsv, expenseCsv]) => {
     allIncome = Papa.parse(incomeCsv, { header: true }).data.filter(r => r.Date);
     allExpense = Papa.parse(expenseCsv, { header: true }).data.filter(r => r.Date);
-    const months = Array.from(new Set([...allIncome, ...allExpense].map(r => formatMonth(r.Date)))).sort((a,b)=>new Date("1 " + b) - new Date("1 " + a));
+    const months = Array.from(new Set(
+      [...allIncome, ...allExpense]
+        .map(r => formatMonth(r.Date))
+        .filter(m => m !== 'Invalid Date')
+    )).sort((a, b) => new Date("1 " + b) - new Date("1 " + a));
     const monthSelect = document.getElementById("monthSelect");
+    monthSelect.innerHTML = '';
     months.forEach(month => {
       const option = document.createElement("option");
       option.value = month;
@@ -167,72 +173,6 @@ function renderTables() {
     </tbody>`;
 }
 
-function downloadPDF() {
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-  let y = 10;
-
-  pdf.setFontSize(14);
-  pdf.text(`TEXNET HOME FIBER - ${selectedMonth} Financial Audit`, 10, y);
-  y += 10;
-
-  pdf.setFontSize(12);
-  const summaryRows = [];
-  document.querySelectorAll('#summaryTable tbody tr').forEach(row => {
-    const cols = row.querySelectorAll('td');
-    summaryRows.push([cols[0].innerText, cols[1].innerText]);
-  });
-  pdf.autoTable({ startY: y, head: [['Category', 'Amount']], body: summaryRows });
-
-  pdf.addPage();
-  y = 10;
-  pdf.setFontSize(13);
-  pdf.text('Income Details', 10, y);
-  y += 5;
-  const income = allIncome.filter(r => formatMonth(r.Date) === selectedMonth);
-  const incomeRows = income.map(r => [r.Date, r.Name || '', r.Amount || '', r.Phone || '']);
-  pdf.autoTable({
-    startY: y,
-    head: [['Date', 'Name', 'Amount', 'Phone']],
-    body: incomeRows,
-    theme: 'grid'
-  });
-
-  pdf.addPage();
-  y = 10;
-  pdf.setFontSize(13);
-  pdf.text('Expenditure Details', 10, y);
-  y += 5;
-  const expense = allExpense.filter(r => formatMonth(r.Date) === selectedMonth);
-  const expenseRows = expense.map(r => [r.Date, r.Item || '', r.Amount || '', r["Transaction Cost"] || '0.00']);
-  pdf.autoTable({
-    startY: y,
-    head: [['Date', 'Item', 'Amount', 'Transaction Cost']],
-    body: expenseRows,
-    theme: 'grid'
-  });
-
-  pdf.save(`TEXNET-${selectedMonth.replace(/ /g, '_')}-Audit.pdf`);
-}
-
-function downloadExcel() {
-  const wb = XLSX.utils.book_new();
-  const incomeData = [
-    ["Date", "Name", "Amount", "Phone"],
-    ...allIncome.filter(r => formatMonth(r.Date) === selectedMonth).map(r => [r.Date, r.Name, r.Amount, r.Phone])
-  ];
-  const expData = [
-    ["Date", "Item", "Amount", "Transaction Cost"],
-    ...allExpense.filter(r => formatMonth(r.Date) === selectedMonth).map(r => [r.Date, r.Item, r.Amount, r['Transaction Cost']])
-  ];
-  const summaryData = [["Category", "Amount"], ...Array.from(document.querySelectorAll('#summaryTable tbody tr')).map(row => Array.from(row.querySelectorAll('td')).map(td => td.innerText))];
-
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), "Summary");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(incomeData), "Income");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expData), "Expenditure");
-  XLSX.writeFile(wb, `TEXNET-${selectedMonth.replace(/ /g, '_')}-Audit.xlsx`);
-}
-
 loadData();
 </script></body>
-</html>
+  </html>
