@@ -72,6 +72,12 @@ select {
   margin-top: 10px;
 }
 
+h3.section-title {
+  text-align: center;
+  margin-top: 40px;
+  color: #0077cc;
+}
+
   </style>
 </head>
 <body class="light">
@@ -91,132 +97,17 @@ select {
       <button onclick="downloadExcel()">Export to Excel</button>
     </div>
     <select id="monthSelect"></select>
-  </div>  <table id="summaryTable"></table>
-  <h3 style="text-align:center">Income Details</h3>
-  <table id="incomeDetails" class="display"></table>
-  <h3 style="text-align:center">Expenditure Details</h3>
+  </div>  <table id="summaryTable"></table>  <h3 class="section-title">Income Details</h3>
+  <table id="incomeDetails" class="display"></table>  <h3 class="section-title">Expenditure Details</h3>
   <table id="expenditureDetails" class="display"></table>
 </div><script>
-const PASSWORD = "texnet123";
-const INCOME_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
-const EXPENSE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
-
-let incomeMap = {}, expenseMap = {}, months = [], allIncome = [], allExpense = [];
-let selectedMonth = "";
-
-function checkPassword() {
-  const input = document.getElementById("loginPassword").value;
-  if (input === PASSWORD) {
-    document.getElementById("loginOverlay").style.display = "none";
-  } else {
-    alert("Incorrect password");
-  }
-}
-
-function toggleTheme() {
-  const body = document.body;
-  body.className = body.className === "light" ? "dark" : "light";
-}
-
-function formatMonth(dateStr) {
-  const parts = dateStr.split(/[\/\s:]/);
-  if (parts.length < 3) return null;
-  const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-  return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
-}
-
-function processData() {
-  incomeMap = {}; expenseMap = {}; months = []; allIncome = []; allExpense = [];
-
-  Papa.parse(INCOME_CSV, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      allIncome = results.data;
-      results.data.forEach(row => {
-        const month = formatMonth(row.Date);
-        if (!month) return;
-        if (!incomeMap[month]) incomeMap[month] = 0;
-        incomeMap[month] += parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
-        if (!months.includes(month)) months.push(month);
-      });
-      checkReady();
-    }
-  });
-
-  Papa.parse(EXPENSE_CSV, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      allExpense = results.data;
-      results.data.forEach(row => {
-        const month = formatMonth(row.Date);
-        if (!month) return;
-        if (!expenseMap[month]) expenseMap[month] = { exp: 0, cost: 0 };
-        expenseMap[month].exp += parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
-        expenseMap[month].cost += parseFloat((row["Transaction Cost"] || "0").replace(/[^\d.]/g, "")) || 0;
-        if (!months.includes(month)) months.push(month);
-      });
-      checkReady();
-    }
-  });
-}
-
-function checkReady() {
-  if (Object.keys(incomeMap).length && Object.keys(expenseMap).length) {
-    populateMonthSelect();
-  }
-}
-
-function populateMonthSelect() {
-  const sel = document.getElementById("monthSelect");
-  sel.innerHTML = months.sort((a, b) => new Date('1 ' + a) - new Date('1 ' + b))
-    .map(m => `<option value="${m}">${m}</option>`).join('');
-  selectedMonth = sel.value;
-  drawSelectedMonth();
-  sel.onchange = () => {
-    selectedMonth = sel.value;
-    drawSelectedMonth();
-  }
-}
-
-function drawSelectedMonth() {
-  const income = incomeMap[selectedMonth] || 0;
-  const expense = expenseMap[selectedMonth]?.exp || 0;
-  const cost = expenseMap[selectedMonth]?.cost || 0;
-  const net = income - expense - cost;
-
-  document.getElementById("summaryTable").innerHTML = `
-    <thead><tr><th>Category</th><th>Amount (Ksh)</th></tr></thead>
-    <tbody>
-      <tr><td>Income</td><td>${income.toFixed(2)}</td></tr>
-      <tr><td>Expenditure</td><td>${expense.toFixed(2)}</td></tr>
-      <tr><td>Transaction Cost</td><td>${cost.toFixed(2)}</td></tr>
-      <tr><td><strong>Net</strong></td><td><strong>${net.toFixed(2)}</strong></td></tr>
-    </tbody>
-  `;
-
-  const incomeTable = $('#incomeDetails');
-  const incomeRows = allIncome.filter(r => formatMonth(r.Date) === selectedMonth).map(r =>
-    `<tr><td>${r.Date}</td><td>${r.Name}</td><td>${r.Amount}</td><td>${r.Phone}</td></tr>`
-  ).join('');
-  incomeTable.html(`<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></thead><tbody>${incomeRows}</tbody>`);
-  if (!$.fn.DataTable.isDataTable('#incomeDetails')) incomeTable.DataTable();
-
-  const expenseTable = $('#expenditureDetails');
-  const expenseRows = allExpense.filter(r => formatMonth(r.Date) === selectedMonth).map(r =>
-    `<tr><td>${r.Date}</td><td>${r.Item}</td><td>${r.Amount}</td><td>${r["Transaction Cost"] || "0.00"}</td></tr>`
-  ).join('');
-  expenseTable.html(`<thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead><tbody>${expenseRows}</tbody>`);
-  if (!$.fn.DataTable.isDataTable('#expenditureDetails')) expenseTable.DataTable();
-}
-
-async function downloadPDF() {
+function downloadPDF() {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
   let y = 10;
+
   pdf.setFontSize(14);
-  pdf.text("TEXNET HOME FIBER - " + selectedMonth + " Financial Audit", 10, y);
+  pdf.text(`TEXNET HOME FIBER - ${selectedMonth} Financial Audit`, 10, y);
   y += 10;
 
   pdf.setFontSize(12);
@@ -228,6 +119,10 @@ async function downloadPDF() {
   pdf.autoTable({ startY: y, head: [['Category', 'Amount']], body: summaryRows });
   y = pdf.lastAutoTable.finalY + 10;
 
+  pdf.setFontSize(13);
+  pdf.text('Income Details', 10, y);
+  y += 5;
+
   const income = allIncome.filter(r => formatMonth(r.Date) === selectedMonth);
   const incomeRows = income.map(r => [r.Date, r.Name || '', r.Amount || '', r.Phone || '']);
   pdf.autoTable({
@@ -238,6 +133,10 @@ async function downloadPDF() {
     margin: { top: y }
   });
   y = pdf.lastAutoTable.finalY + 10;
+
+  pdf.setFontSize(13);
+  pdf.text('Expenditure Details', 10, y);
+  y += 5;
 
   const expense = allExpense.filter(r => formatMonth(r.Date) === selectedMonth);
   const expenseRows = expense.map(r => [r.Date, r.Item || '', r.Amount || '', r["Transaction Cost"] || '0.00']);
@@ -251,30 +150,5 @@ async function downloadPDF() {
 
   pdf.save(`TEXNET-${selectedMonth.replace(/ /g, '_')}-Audit.pdf`);
 }
-
-function downloadExcel() {
-  const incomeData = [
-    ["Income Details"],
-    ["Date", "Name", "Amount", "Phone"],
-    ...allIncome.map(row => [row.Date, row.Name, row.Amount, row.Phone])
-  ];
-
-  const expenseData = [
-    ["Expenditure Details"],
-    ["Date", "Item", "Amount", "Transaction Cost"],
-    ...allExpense.map(row => [row.Date, row.Item, row.Amount, row["Transaction Cost"]])
-  ];
-
-  const wb = XLSX.utils.book_new();
-  const wsIncome = XLSX.utils.aoa_to_sheet(incomeData);
-  const wsExpense = XLSX.utils.aoa_to_sheet(expenseData);
-
-  XLSX.utils.book_append_sheet(wb, wsIncome, "Income");
-  XLSX.utils.book_append_sheet(wb, wsExpense, "Expenditure");
-
-  XLSX.writeFile(wb, "full-audit.xlsx");
-}
-
-processData();
 </script></body>
   </html>
