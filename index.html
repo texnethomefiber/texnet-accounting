@@ -1,233 +1,211 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html>
 <head>
   <title>TEXNET HOME FIBER Monthly Financial Audit</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
   <style>
-    /* === Styles (Header, Tables, Responsive) === */
     body {
       font-family: 'Segoe UI', sans-serif;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.light {
       background: #f0f4f8;
-      padding: 20px;
-      max-width: 1200px;
-      margin: auto;
       color: #333;
     }
+    body.dark {
+      background: #1e1e1e;
+      color: #f0f0f0;
+    }
     .header-box {
-      background-color: #007acc;
-      color: #fff;
-      padding: 20px;
-      border-radius: 10px;
       text-align: center;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 20px;
     }
-    .header-box h1 { margin:0; font-size:2em; }
-    .header-box h2 { margin-top:10px; font-weight:normal; font-size:1.2em; }
-    label, select { display:block; margin-top:10px; }
+    .btn-group button {
+      margin: 5px;
+      padding: 10px 20px;
+    }
+    canvas {
+      max-width: 600px;
+      margin: 20px auto;
+      display: block;
+    }
+    #loginOverlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); display: flex;
+      align-items: center; justify-content: center; z-index: 9999;
+    }
+    #loginBox {
+      background: white; padding: 20px; border-radius: 10px;
+      max-width: 300px; width: 100%; text-align: center;
+    }
     select {
-      padding:10px; font-size:1em;
-      border-radius:5px; border:1px solid #ccc;
-      width:100%; max-width:300px;
-    }
-    .summary {
-      background: #e3f2fd;
-      border-left:6px solid #2196F3;
-      border-radius:5px;
-      padding:15px 20px;
-      margin-top:20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
-    .summary p { margin:6px 0; font-weight:500; }
-    table {
-      width:100%;
-      border-collapse:collapse;
-      margin-top:20px;
-      background:#fff;
-      border-radius:8px;
-      overflow:hidden;
-      box-shadow:0 4px 10px rgba(0,0,0,0.05);
-    }
-    th, td {
-      text-align:left;
-      padding:12px 14px;
-      border-bottom:1px solid #f0f0f0;
-    }
-    th {
-      background:#007acc;
-      color:#fff;
-      font-weight:600;
-      cursor:pointer;
-      border-bottom:2px solid #005f99;
-    }
-    tr:nth-child(even) td { background:#f9fbfc; }
-    tr:hover td { background:#e6f4ff; }
-    .highlight-income { background:#e6f9e6 !important; }
-    .highlight-expense { background:#ffe6e6 !important; }
-
-    /* Responsive */
-    @media screen and (max-width:768px) {
-      table, thead, tbody, th, td, tr { display:block; }
-      thead tr { display:none; }
-      tr {
-        margin-bottom:15px;
-        border:1px solid #ccc;
-        border-radius:5px;
-        background:#fff;
-        padding:10px;
-      }
-      td {
-        border:none;
-        position:relative;
-        padding-left:50%;
-      }
-      td::before {
-        content: attr(data-label);
-        position:absolute;
-        top:12px;
-        left:14px;
-        font-weight:bold;
-        white-space:nowrap;
-      }
+      display: block;
+      margin: 0 auto;
+      padding: 8px;
+      font-size: 1rem;
+      border-radius: 6px;
+      margin-top: 10px;
     }
   </style>
 </head>
-<body>
-  <div class="header-box">
-    <h1>TEXNET HOME FIBER</h1>
-    <h2>Monthly Financial Audit</h2>
+<body class="light">
+<div id="loginOverlay">
+  <div id="loginBox">
+    <h3>Enter Password</h3>
+    <input type="password" id="loginPassword"><br><br>
+    <button onclick="checkPassword()">Login</button>
   </div>
+</div><div class="header-box">
+  <h1>TEXNET HOME FIBER</h1>
+  <h2>Monthly Financial Audit</h2>
+  <div class="btn-group">
+    <button onclick="toggleTheme()">Toggle Dark/Light</button>
+    <button onclick="downloadPDF()">Export to PDF</button>
+    <button onclick="downloadExcel()">Export to Excel</button>
+  </div>
+  <select id="monthSelect" onchange="drawSelectedMonth()"></select>
+</div><canvas id="chartCanvas"></canvas>
 
-  <label for="monthSelect">Select Month:</label>
-  <select id="monthSelect"></select>
-  <div class="summary" id="summary"></div>
+<script>
+  const PASSWORD = "texnet123";
+  const INCOME_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
+  const EXPENSE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
 
-  <h3>📥 Income</h3>
-  <table id="incomeTable"></table>
+  let incomeMap = {}, expenseMap = {}, months = [];
+  let currentChart;
 
-  <h3>📤 Expenditure</h3>
-  <table id="expenditureTable"></table>
-
-  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
-  <script>
-    const INCOME_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
-    const EXPENSE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
-
-    let incomeData = {}, expenseData = {};
-    let incomeDateAsc = true, expenseDateAsc = true, itemAsc = true;
-
-    function formatMonth(d) {
-      const [day, month, year] = d.split(/[\/ ]/);
-      const dt = new Date(`${month}/${day}/${year}`);
-      return isNaN(dt) ? null : dt.toLocaleString('default',{month:'long',year:'numeric'});
+  function checkPassword() {
+    const input = document.getElementById("loginPassword").value;
+    if (input === PASSWORD) {
+      document.getElementById("loginOverlay").style.display = "none";
+    } else {
+      alert("Incorrect password");
     }
+  }
 
-    function groupByMonth(data, key) {
-      const grouped = {};
-      data.forEach(r => {
-        const m = formatMonth(r[key] || "");
-        if (!m) return;
-        grouped[m] = grouped[m] || [];
-        grouped[m].push(r);
-      });
-      return grouped;
+  function toggleTheme() {
+    const body = document.body;
+    body.className = body.className === "light" ? "dark" : "light";
+  }
+
+  function formatMonth(dateStr, withTime = false) {
+    const parts = dateStr.split(/[\/\s:]/);
+    let date;
+    if (withTime) {
+      date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    } else {
+      date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
     }
+    return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  }
 
-    function renderTables(month) {
-      const inc = incomeData[month] || [], exp = expenseData[month] || [];
-      const incT = document.getElementById('incomeTable'),
-            expT = document.getElementById('expenditureTable'),
-            sum = document.getElementById('summary'),
-            arr = dir => dir ? '⬆' : '⬇';
+  function processData() {
+    Papa.parse(INCOME_CSV, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        results.data.forEach(row => {
+          const month = formatMonth(row.Date, true);
+          if (!month) return;
+          if (!incomeMap[month]) incomeMap[month] = 0;
+          incomeMap[month] += parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
+          if (!months.includes(month)) months.push(month);
+        });
+        checkReady();
+      }
+    });
 
-      incT.innerHTML = `<thead><tr>
-        <th id="sortIncDate">Date ${arr(incomeDateAsc)}</th>
-        <th>Name</th><th>Amount</th><th>Phone</th>
-      </tr></thead><tbody></tbody>`;
-      expT.innerHTML = `<thead><tr>
-        <th id="sortExpDate">Date ${arr(expenseDateAsc)}</th>
-        <th id="sortItem">Item ${arr(itemAsc)}</th>
-        <th>Amount</th><th>Transaction Cost</th>
-      </tr></thead><tbody></tbody>`;
+    Papa.parse(EXPENSE_CSV, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        results.data.forEach(row => {
+          const month = formatMonth(row.Date);
+          if (!month) return;
+          if (!expenseMap[month]) expenseMap[month] = { exp: 0, cost: 0 };
+          expenseMap[month].exp += parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
+          expenseMap[month].cost += parseFloat((row["Transaction Cost"] || "0").replace(/[^\d.]/g, "")) || 0;
+          if (!months.includes(month)) months.push(month);
+        });
+        checkReady();
+      }
+    });
+  }
 
-      let totInc=0, totExp=0, totCost=0;
-
-      inc.forEach(r => {
-        const amt = parseFloat((r.Amount||"0").replace(/[^\d.]/g,""))||0;
-        totInc += amt;
-        incT.querySelector('tbody').insertAdjacentHTML('beforeend',
-          `<tr class="${amt>=10000?'highlight-income':''}">
-            <td data-label="Date">${r.Date}</td>
-            <td data-label="Name">${r.Name}</td>
-            <td data-label="Amount">Ksh ${amt.toFixed(2)}</td>
-            <td data-label="Phone">${r.Phone||""}</td>
-          </tr>`);
-      });
-
-      exp.forEach(r => {
-        const a = parseFloat((r.Amount||"0").replace(/[^\d.]/g,""))||0;
-        const c = parseFloat((r["Transaction Cost"]||"0").replace(/[^\d.]/g,""))||0;
-        totExp += a; totCost += c;
-        expT.querySelector('tbody').insertAdjacentHTML('beforeend',
-          `<tr class="${a>=5000?'highlight-expense':''}">
-            <td data-label="Date">${r.Date}</td>
-            <td data-label="Item">${r.Item}</td>
-            <td data-label="Amount">Ksh ${a.toFixed(2)}</td>
-            <td data-label="Transaction Cost">Ksh ${c.toFixed(2)}</td>
-          </tr>`);
-      });
-
-      const net = totInc - totExp - totCost;
-      sum.innerHTML = `
-        <p><strong>Total Income:</strong> Ksh ${totInc.toFixed(2)}</p>
-        <p><strong>Total Expenditure:</strong> Ksh ${totExp.toFixed(2)}</p>
-        <p><strong>Transaction Costs:</strong> Ksh ${totCost.toFixed(2)}</p>
-        <p><strong>Net Balance:</strong> Ksh ${net.toFixed(2)}</p>`;
+  function checkReady() {
+    if (Object.keys(incomeMap).length && Object.keys(expenseMap).length) {
+      populateMonthSelect();
     }
+  }
 
-    function setupSorting() {
-      document.addEventListener('click', e => {
-        const m = document.getElementById('monthSelect').value;
-        if (e.target.id === 'sortIncDate') {
-          incomeData[m].sort((a,b) => incomeDateAsc
-            ? new Date(a.Date.split(' ')[0].split('/').reverse())
-              - new Date(b.Date.split(' ')[0].split('/').reverse())
-            : new Date(b.Date.split(' ')[0].split('/').reverse())
-              - new Date(a.Date.split(' ')[0].split('/').reverse()));
-          incomeDateAsc = !incomeDateAsc;
-        }
-        if (e.target.id === 'sortExpDate') {
-          expenseData[m].sort((a,b) => expenseDateAsc
-            ? new Date(a.Date.split('/').reverse())
-              - new Date(b.Date.split('/').reverse())
-            : new Date(b.Date.split('/').reverse())
-              - new Date(a.Date.split('/').reverse()));
-          expenseDateAsc = !expenseDateAsc;
-        }
-        if (e.target.id === 'sortItem') {
-          expenseData[m].sort((a,b) => itemAsc
-            ? a.Item.localeCompare(b.Item)
-            : b.Item.localeCompare(a.Item));
-          itemAsc = !itemAsc;
-        }
-        renderTables(m);
-      });
-    }
+  function populateMonthSelect() {
+    const sel = document.getElementById("monthSelect");
+    sel.innerHTML = months.sort((a, b) => new Date('1 ' + a) - new Date('1 ' + b))
+      .map(m => `<option value="${m}">${m}</option>`).join('');
+    drawSelectedMonth();
+  }
 
-    Papa.parse(INCOME_CSV, { download:true, header:true, complete: r1 => {
-      Papa.parse(EXPENSE_CSV, { download:true, header:true, complete: r2 => {
-        incomeData = groupByMonth(r1.data, 'Date');
-        expenseData = groupByMonth(r2.data, 'Date');
-        const months = Array.from(new Set([...Object.keys(incomeData),...Object.keys(expenseData)]))
-          .sort((a,b)=>new Date('1 '+a)-new Date('1 '+b));
-        const sel = document.getElementById('monthSelect');
-        sel.innerHTML = months.map(m=>`<option>${m}</option>`).join('');
-        sel.onchange = () => renderTables(sel.value);
-        sel.value = months.pop();
-        setupSorting();
-        renderTables(sel.value);
-      }});
-    }});
-  </script>
-</body>
+  function drawSelectedMonth() {
+    const month = document.getElementById("monthSelect").value;
+    const income = incomeMap[month] || 0;
+    const expense = expenseMap[month]?.exp || 0;
+    const cost = expenseMap[month]?.cost || 0;
+
+    if (currentChart) currentChart.destroy();
+
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    currentChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Income', 'Expenditure', 'Transaction Cost'],
+        datasets: [{
+          label: month,
+          data: [income, expense, cost],
+          backgroundColor: ['green', 'red', 'orange']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const month = document.getElementById("monthSelect").value;
+    const income = incomeMap[month] || 0;
+    const expense = expenseMap[month]?.exp || 0;
+    const cost = expenseMap[month]?.cost || 0;
+    const net = income - expense - cost;
+    doc.text(`TEXNET HOME FIBER - Monthly Audit (${month})`, 10, 10);
+    doc.text(`Income: Ksh ${income.toFixed(2)}`, 10, 20);
+    doc.text(`Expenditure: Ksh ${expense.toFixed(2)}`, 10, 30);
+    doc.text(`Transaction Cost: Ksh ${cost.toFixed(2)}`, 10, 40);
+    doc.text(`Net: Ksh ${net.toFixed(2)}`, 10, 50);
+    doc.save("audit.pdf");
+  }
+
+  function downloadExcel() {
+    const month = document.getElementById("monthSelect").value;
+    const income = incomeMap[month] || 0;
+    const expense = expenseMap[month]?.exp || 0;
+    const cost = expenseMap[month]?.cost || 0;
+    const data = [["Category", "Amount"],
+      ["Income", income],
+      ["Expenditure", expense],
+      ["Transaction Cost", cost],
+      ["Net", income - expense - cost]];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Audit");
+    XLSX.writeFile(wb, "audit.xlsx");
+  }
+
+  processData();
+</script></body>
 </html>
