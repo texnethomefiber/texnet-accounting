@@ -75,13 +75,7 @@ select {
   </style>
 </head>
 <body class="light">
-<div id="loginOverlay">
-  <div id="loginBox">
-    <h3>Enter Password</h3>
-    <input type="password" id="loginPassword"><br><br>
-    <button onclick="checkPassword()">Login</button>
-  </div>
-</div><div id="contentToExport">
+<div id="contentToExport">
   <div class="header-box">
     <h1>TEXNET HOME FIBER</h1>
     <h2>Monthly Financial Audit</h2>
@@ -97,21 +91,14 @@ select {
   <h3 style="text-align:center">Expenditure Details</h3>
   <table id="expenditureDetails" class="display"></table>
 </div><script>
-const PASSWORD = "texnet123";
+
 const INCOME_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
 const EXPENSE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
 
 let incomeMap = {}, expenseMap = {}, months = [], allIncome = [], allExpense = [];
 let selectedMonth = "";
 
-function checkPassword() {
-  const input = document.getElementById("loginPassword").value;
-  if (input === PASSWORD) {
-    document.getElementById("loginOverlay").style.display = "none";
-  } else {
-    alert("Incorrect password");
-  }
-}
+
 
 function toggleTheme() {
   const body = document.body;
