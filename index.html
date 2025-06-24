@@ -101,6 +101,98 @@ h3.section-title {
   <table id="incomeDetails" class="display"></table>  <h3 class="section-title">Expenditure Details</h3>
   <table id="expenditureDetails" class="display"></table>
 </div><script>
+let allIncome = [], allExpense = [], selectedMonth = '';
+
+const incomeURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv';
+const expenseURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv';
+
+function checkPassword() {
+  const input = document.getElementById("loginPassword").value;
+  if (input === "texnet") {
+    document.getElementById("loginOverlay").style.display = "none";
+  } else {
+    alert("Incorrect password");
+  }
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+  document.body.classList.toggle('light');
+}
+
+function formatMonth(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+}
+
+function loadData() {
+  Promise.all([
+    fetch(incomeURL).then(r => r.text()),
+    fetch(expenseURL).then(r => r.text())
+  ]).then(([incomeCsv, expenseCsv]) => {
+    allIncome = Papa.parse(incomeCsv, { header: true }).data.filter(r => r.Date);
+    allExpense = Papa.parse(expenseCsv, { header: true }).data.filter(r => r.Date);
+    const months = Array.from(new Set([...allIncome, ...allExpense].map(r => formatMonth(r.Date)))).sort((a,b)=>new Date("1 " + b) - new Date("1 " + a));
+    const monthSelect = document.getElementById("monthSelect");
+    months.forEach(month => {
+      const option = document.createElement("option");
+      option.value = month;
+      option.textContent = month;
+      monthSelect.appendChild(option);
+    });
+    selectedMonth = months[0];
+    monthSelect.value = selectedMonth;
+    monthSelect.onchange = () => {
+      selectedMonth = monthSelect.value;
+      renderTables();
+    };
+    renderTables();
+  });
+}
+
+function renderTables() {
+  const income = allIncome.filter(r => formatMonth(r.Date) === selectedMonth);
+  const expense = allExpense.filter(r => formatMonth(r.Date) === selectedMonth);
+
+  let totalIncome = 0, totalExpense = 0, totalCost = 0;
+
+  $('#incomeDetails').DataTable({
+    destroy: true,
+    data: income.map(r => {
+      const amt = parseFloat((r.Amount || '').replace(/[^\d.-]/g, '')) || 0;
+      totalIncome += amt;
+      return [r.Date, r.Name, amt.toFixed(2), r.Phone];
+    }),
+    columns: [
+      { title: "Date" }, { title: "Name" }, { title: "Amount" }, { title: "Phone" }
+    ]
+  });
+
+  $('#expenditureDetails').DataTable({
+    destroy: true,
+    data: expense.map(r => {
+      const amt = parseFloat((r.Amount || '').replace(/[^\d.-]/g, '')) || 0;
+      const cost = parseFloat((r['Transaction Cost'] || '').replace(/[^\d.-]/g, '')) || 0;
+      totalExpense += amt;
+      totalCost += cost;
+      return [r.Date, r.Item, amt.toFixed(2), cost.toFixed(2)];
+    }),
+    columns: [
+      { title: "Date" }, { title: "Item" }, { title: "Amount" }, { title: "Transaction Cost" }
+    ]
+  });
+
+  const balance = totalIncome - (totalExpense + totalCost);
+  document.getElementById('summaryTable').innerHTML = `
+    <thead><tr><th>Category</th><th>Amount (Ksh)</th></tr></thead>
+    <tbody>
+      <tr><td>Total Income</td><td>${totalIncome.toFixed(2)}</td></tr>
+      <tr><td>Total Expenditure</td><td>${totalExpense.toFixed(2)}</td></tr>
+      <tr><td>Total Transaction Cost</td><td>${totalCost.toFixed(2)}</td></tr>
+      <tr><td><b>Balance</b></td><td><b>${balance.toFixed(2)}</b></td></tr>
+    </tbody>`;
+}
+
 function downloadPDF() {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
@@ -117,38 +209,56 @@ function downloadPDF() {
     summaryRows.push([cols[0].innerText, cols[1].innerText]);
   });
   pdf.autoTable({ startY: y, head: [['Category', 'Amount']], body: summaryRows });
-  y = pdf.lastAutoTable.finalY + 10;
 
+  pdf.addPage();
+  y = 10;
   pdf.setFontSize(13);
   pdf.text('Income Details', 10, y);
   y += 5;
-
   const income = allIncome.filter(r => formatMonth(r.Date) === selectedMonth);
   const incomeRows = income.map(r => [r.Date, r.Name || '', r.Amount || '', r.Phone || '']);
   pdf.autoTable({
     startY: y,
     head: [['Date', 'Name', 'Amount', 'Phone']],
     body: incomeRows,
-    theme: 'grid',
-    margin: { top: y }
+    theme: 'grid'
   });
-  y = pdf.lastAutoTable.finalY + 10;
 
+  pdf.addPage();
+  y = 10;
   pdf.setFontSize(13);
   pdf.text('Expenditure Details', 10, y);
   y += 5;
-
   const expense = allExpense.filter(r => formatMonth(r.Date) === selectedMonth);
   const expenseRows = expense.map(r => [r.Date, r.Item || '', r.Amount || '', r["Transaction Cost"] || '0.00']);
   pdf.autoTable({
     startY: y,
     head: [['Date', 'Item', 'Amount', 'Transaction Cost']],
     body: expenseRows,
-    theme: 'grid',
-    margin: { top: y }
+    theme: 'grid'
   });
 
   pdf.save(`TEXNET-${selectedMonth.replace(/ /g, '_')}-Audit.pdf`);
 }
+
+function downloadExcel() {
+  const wb = XLSX.utils.book_new();
+  const incomeData = [
+    ["Date", "Name", "Amount", "Phone"],
+    ...allIncome.filter(r => formatMonth(r.Date) === selectedMonth).map(r => [r.Date, r.Name, r.Amount, r.Phone])
+  ];
+  const expData = [
+    ["Date", "Item", "Amount", "Transaction Cost"],
+    ...allExpense.filter(r => formatMonth(r.Date) === selectedMonth).map(r => [r.Date, r.Item, r.Amount, r['Transaction Cost']])
+  ];
+  const summaryData = [["Category", "Amount"], ...Array.from(document.querySelectorAll('#summaryTable tbody tr')).map(row => Array.from(row.querySelectorAll('td')).map(td => td.innerText))];
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), "Summary");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(incomeData), "Income");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expData), "Expenditure");
+  XLSX.writeFile(wb, `TEXNET-${selectedMonth.replace(/ /g, '_')}-Audit.xlsx`);
+}
+
+loadData();
 </script></body>
-  </html>
+</html>
