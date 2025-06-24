@@ -201,39 +201,58 @@ function drawSelectedMonth() {
 async function downloadPDF() {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
-  let y = 10;
-  pdf.setFontSize(14);
-  pdf.text("TEXNET HOME FIBER - " + selectedMonth + " Financial Audit", 10, y);
-  y += 10;
 
+  // Page 1: Summary Table
+  pdf.setFontSize(16);
+  pdf.text(`TEXNET HOME FIBER`, 10, 15);
   pdf.setFontSize(12);
+  pdf.text(`${selectedMonth} - Financial Summary`, 10, 25);
+
   const summaryRows = [];
   document.querySelectorAll('#summaryTable tbody tr').forEach(row => {
     const cols = row.querySelectorAll('td');
     summaryRows.push([cols[0].innerText, cols[1].innerText]);
   });
-  pdf.autoTable({ startY: y, head: [['Category', 'Amount']], body: summaryRows });
-  y = pdf.lastAutoTable.finalY + 10;
+
+  pdf.autoTable({
+    startY: 30,
+    head: [['Category', 'Amount (Ksh)']],
+    body: summaryRows,
+    theme: 'grid'
+  });
+
+  // Page 2: Income
+  pdf.addPage();
+  pdf.setFontSize(16);
+  pdf.text(`Income Details - ${selectedMonth}`, 10, 15);
 
   const income = allIncome.filter(r => formatMonth(r.Date) === selectedMonth);
-  const incomeRows = income.map(r => [r.Date, r.Name || '', r.Amount || '', r.Phone || '']);
+  const incomeRows = income.map(r => [
+    r.Date || '', r.Name || '', r.Amount || '', r.Phone || ''
+  ]);
+
   pdf.autoTable({
-    startY: y,
+    startY: 25,
     head: [['Date', 'Name', 'Amount', 'Phone']],
     body: incomeRows,
-    theme: 'grid',
-    margin: { top: y }
+    theme: 'grid'
   });
-  y = pdf.lastAutoTable.finalY + 10;
+
+  // Page 3: Expenditure
+  pdf.addPage();
+  pdf.setFontSize(16);
+  pdf.text(`Expenditure Details - ${selectedMonth}`, 10, 15);
 
   const expense = allExpense.filter(r => formatMonth(r.Date) === selectedMonth);
-  const expenseRows = expense.map(r => [r.Date, r.Item || '', r.Amount || '', r["Transaction Cost"] || '0.00']);
+  const expenseRows = expense.map(r => [
+    r.Date || '', r.Item || '', r.Amount || '', r["Transaction Cost"] || '0.00'
+  ]);
+
   pdf.autoTable({
-    startY: y,
+    startY: 25,
     head: [['Date', 'Item', 'Amount', 'Transaction Cost']],
     body: expenseRows,
-    theme: 'grid',
-    margin: { top: y }
+    theme: 'grid'
   });
 
   pdf.save(`TEXNET-${selectedMonth.replace(/ /g, '_')}-Audit.pdf`);
