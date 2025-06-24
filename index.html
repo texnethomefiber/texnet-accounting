@@ -84,12 +84,24 @@
       });
 
       expenditureRows.forEach(row => {
-        const amount = parseFloat(row.Amount || 0);
-        const cost = parseFloat(row["Transaction Cost"] || 0);
-        totalExpenditure += amount;
-        totalCost += cost;
-        expenditureTable.innerHTML += `<tr><td>${row.Date}</td><td>${row.Item}</td><td>${amount.toFixed(2)}</td><td>${cost.toFixed(2)}</td></tr>`;
-      });
+  let amount = parseFloat((row.Amount || "").replace("Ksh", "").trim());
+  let cost = parseFloat((row["Transaction Cost"] || "").replace("Ksh", "").trim());
+
+  amount = isNaN(amount) ? 0 : amount;
+  cost = isNaN(cost) ? 0 : cost;
+
+  totalExpenditure += amount;
+  totalCost += cost;
+
+  expenditureTable.innerHTML += `
+    <tr>
+      <td>${row.Date}</td>
+      <td>${row.Item}</td>
+      <td>${amount.toFixed(2)}</td>
+      <td>${cost.toFixed(2)}</td>
+    </tr>
+  `;
+});
 
       const net = totalIncome - totalExpenditure - totalCost;
 
