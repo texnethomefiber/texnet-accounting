@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monthly Financial Auditor</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: auto; }
+    h2, h3 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f9f9f9; }
+    select { padding: 5px; font-size: 1em; }
+    .summary p { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <h2>Monthly Financial Auditor</h2>
+
+  <label for="monthSelect">Select Month:</label>
+  <select id="monthSelect"></select>
+
+  <div class="summary" id="summary"></div>
+
+  <h3>Income</h3>
+  <table id="incomeTable"></table>
+
+  <h3>Expenditure</h3>
+  <table id="expenditureTable"></table>
+
+  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
+  <script>
+    const incomeCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
+    const expenditureCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
+
+    let incomeData = {}, expenditureData = {};
+
+    function parseCSV(url, callback) {
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        complete: results => callback(results.data)
+      });
+    }
+
+    function formatMonth(dateStr) {
+      const date = new Date(dateStr.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$2/$1/$3'));
+      if (isNaN(date)) return null;
+      return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
+
+    function formatMonthIncome(dateStr) {
+      const parts = dateStr.split(/[\/\s:]/); // DD/MM/YYYY HH:MM:SS
+      const [day, month, year] = parts;
+      const date = new Date(`${month}/${day}/${year}`);
+      return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
+
+    function groupByMonth(data, dateKey, isIncome = false) {
+      return data.reduce((acc, row) => {
+        const month = isIncome ? formatMonthIncome(row[dateKey]) : formatMonth(row[dateKey]);
+        if (!month) return acc;
+        if (!acc[month]) acc[month] = [];
+        acc[month].push(row);
+        return acc;
+      }, {});
+    }
+
+    function renderTables(month) {
+      const incomeRows = incomeData[month] || [];
+      const expenditureRows = expenditureData[month] || [];
+
+      const incomeTable = document.getElementById('incomeTable');
+      const expenditureTable = document.getElementById('expenditureTable');
+      const summaryDiv = document.getElementById('summary');
+
+      incomeTable.innerHTML = "<tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr>";
+      expenditureTable.innerHTML = "<tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr>";
+
+      let totalIncome = 0, totalExpenditure = 0, totalCost = 0;
+
+      incomeRows.forEach(row => {
+        const amount = parseFloat(row.Amount || 0);
+        totalIncome += amount;
+        incomeTable.innerHTML += `<tr><td>${row.Date}</td><td>${row.Name}</td><td>${amount.toFixed(2)}</td><td>${row.Phone}</td></tr>`;
+      });
+
+      expenditureRows.forEach(row => {
+        const amount = parseFloat(row.Amount || 0);
+        const cost = parseFloat(row["Transaction Cost"] || 0);
+        totalExpenditure += amount;
+        totalCost += cost;
+        expenditureTable.innerHTML += `<tr><td>${row.Date}</td><td>${row.Item}</td><td>${amount.toFixed(2)}</td><td>${cost.toFixed(2)}</td></tr>`;
+      });
+
+      const net = totalIncome - totalExpenditure - totalCost;
+
+      summaryDiv.innerHTML = `
+        <h3>Summary for ${month}</h3>
+        <p><strong>Total Income:</strong> ${totalIncome.toFixed(2)}</p>
+        <p><strong>Total Expenditure:</strong> ${totalExpenditure.toFixed(2)}</p>
+        <p><strong>Transaction Costs:</strong> ${totalCost.toFixed(2)}</p>
+        <p><strong>Net Balance:</strong> ${net.toFixed(2)}</p>
+      `;
+    }
+
+    function populateMonthSelect() {
+      const allMonths = new Set([
+        ...Object.keys(incomeData),
+        ...Object.keys(expenditureData)
+      ]);
+      const sortedMonths = Array.from(allMonths).sort((a, b) => new Date(a) - new Date(b));
+      const select = document.getElementById('monthSelect');
+      select.innerHTML = sortedMonths.map(m => `<option value="${m}">${m}</option>`).join("");
+      select.onchange = () => renderTables(select.value);
+      if (sortedMonths.length) renderTables(sortedMonths[sortedMonths.length - 1]);
+    }
+
+    parseCSV(incomeCSV, data => {
+      incomeData = groupByMonth(data, "Date", true);
+      parseCSV(expenditureCSV, data2 => {
+        expenditureData = groupByMonth(data2, "Date");
+        populateMonthSelect();
+      });
+    });
+  </script>
+</body>
+</html>
