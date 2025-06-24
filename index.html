@@ -105,13 +105,13 @@ function loadData() {
     fetch(incomeURL).then(r => r.text()),
     fetch(expenseURL).then(r => r.text())
   ]).then(([incomeCsv, expenseCsv]) => {
-    allIncome = Papa.parse(incomeCsv, { header: true }).data.filter(r => r.Date);
-    allExpense = Papa.parse(expenseCsv, { header: true }).data.filter(r => r.Date);
+    allIncome = Papa.parse(incomeCsv, { header: true }).data.filter(r => r.Date && !isNaN(new Date(r.Date)));
+    allExpense = Papa.parse(expenseCsv, { header: true }).data.filter(r => r.Date && !isNaN(new Date(r.Date)));
+
     const months = Array.from(new Set(
-      [...allIncome, ...allExpense]
-        .map(r => formatMonth(r.Date))
-        .filter(m => m !== 'Invalid Date')
+      [...allIncome, ...allExpense].map(r => formatMonth(r.Date)).filter(m => m !== 'Invalid Date')
     )).sort((a, b) => new Date("1 " + b) - new Date("1 " + a));
+
     const monthSelect = document.getElementById("monthSelect");
     monthSelect.innerHTML = '';
     months.forEach(month => {
