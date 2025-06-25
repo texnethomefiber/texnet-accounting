@@ -126,10 +126,18 @@
   <h3>📥 Income</h3>
   <table id="incomeTable"></table>
   <h3>📤 Expenditure</h3>
-  <table id="expenditureTable"></table>  <script>
+  <table id="expenditureTable"></table>  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>  <script>
     const incomeCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
     const expenditureCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
     let incomeData = {}, expenditureData = {}, currentMonth = "";
+
+    function formatMonth(dateStr) {
+      const match = dateStr.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (!match) return null;
+      const [_, day, month, year] = match;
+      const date = new Date(`${year}-${month}-${day}`);
+      return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
 
     function parseCSV(url, callback) {
       Papa.parse(url, {
@@ -144,12 +152,6 @@
           callback(cleaned);
         }
       });
-    }
-
-    function formatMonth(dateStr) {
-      const [day, month, year] = dateStr.split("/");
-      const date = new Date(`${year}-${month}-${day}`);
-      return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
     }
 
     function groupByMonth(data, key) {
@@ -170,8 +172,7 @@
       let totalIncome = 0, totalExpense = 0, totalCost = 0;
 
       const incomeTable = document.getElementById("incomeTable");
-      incomeTable.innerHTML = `
-        <thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr></thead>`;
+      incomeTable.innerHTML = `<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr></thead>`;
       income.forEach(row => {
         const amount = parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
         totalIncome += amount;
@@ -179,8 +180,7 @@
       });
 
       const expTable = document.getElementById("expenditureTable");
-      expTable.innerHTML = `
-        <thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead>`;
+      expTable.innerHTML = `<thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead>`;
       expense.forEach(row => {
         const amount = parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
         const cost = parseFloat((row["Transaction Cost"] || "0").replace(/[^\d.]/g, "")) || 0;
@@ -261,5 +261,5 @@
         });
       });
     });
-  </script>  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script></body>
-  </html>
+  </script></body>
+</html>
