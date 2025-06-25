@@ -92,6 +92,7 @@
       color: #fff;
       font-weight: 600;
       border-bottom: 2px solid #005f99;
+      cursor: pointer;
     }
     td {
       border-bottom: 1px solid #f0f0f0;
@@ -101,9 +102,6 @@
     }
     tr:hover td {
       background-color: #e6f4ff;
-    }
-    th.sortable {
-      cursor: pointer;
     }
     tr.highlight-income {
       background-color: #e6f9e6 !important;
@@ -172,7 +170,12 @@
       let totalIncome = 0, totalExpense = 0, totalCost = 0;
 
       const incomeTable = document.getElementById("incomeTable");
-      incomeTable.innerHTML = `<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr></thead>`;
+      incomeTable.innerHTML = `<thead><tr>
+        <th onclick="sortTable('income', 'Date')">Date</th>
+        <th onclick="sortTable('income', 'Name')">Name</th>
+        <th onclick="sortTable('income', 'Amount')">Amount</th>
+        <th onclick="sortTable('income', 'Phone')">Phone</th>
+      </tr></thead>`;
       income.forEach(row => {
         const amount = parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
         totalIncome += amount;
@@ -180,7 +183,12 @@
       });
 
       const expTable = document.getElementById("expenditureTable");
-      expTable.innerHTML = `<thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead>`;
+      expTable.innerHTML = `<thead><tr>
+        <th onclick="sortTable('expense', 'Date')">Date</th>
+        <th onclick="sortTable('expense', 'Item')">Item</th>
+        <th onclick="sortTable('expense', 'Amount')">Amount</th>
+        <th onclick="sortTable('expense', 'Transaction Cost')">Transaction Cost</th>
+      </tr></thead>`;
       expense.forEach(row => {
         const amount = parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
         const cost = parseFloat((row["Transaction Cost"] || "0").replace(/[^\d.]/g, "")) || 0;
@@ -196,6 +204,23 @@
         <p><strong>Total Expenditure:</strong> Ksh ${totalExpense.toFixed(2)}</p>
         <p><strong>Transaction Costs:</strong> Ksh ${totalCost.toFixed(2)}</p>
         <p><strong>Net Balance:</strong> Ksh ${net.toFixed(2)}</p>`;
+    }
+
+    function sortTable(type, key) {
+      const data = type === 'income' ? incomeData[currentMonth] : expenditureData[currentMonth];
+      const isAmount = key.toLowerCase().includes('amount') || key === 'Transaction Cost';
+      data.sort((a, b) => {
+        let aVal = a[key] || "", bVal = b[key] || "";
+        if (isAmount) {
+          aVal = parseFloat(aVal.replace(/[^\d.]/g, "")) || 0;
+          bVal = parseFloat(bVal.replace(/[^\d.]/g, "")) || 0;
+        } else {
+          aVal = aVal.toString().toLowerCase();
+          bVal = bVal.toString().toLowerCase();
+        }
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      });
+      renderTables(currentMonth);
     }
 
     function exportToPDF() {
