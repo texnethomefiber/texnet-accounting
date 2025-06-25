@@ -248,6 +248,14 @@ function sortExpense(column) {
         totalIncome += amount;
         incomeTable.innerHTML += `<tr class="${amount >= 10000 ? 'highlight-income' : ''}"><td>${row.Date}</td><td>${row.Name}</td><td>Ksh ${amount.toFixed(2)}</td><td>${row.Phone}</td></tr>`;
       });
+      incomeTable.innerHTML += `
+  <tr style="font-weight: bold; background: #d6f5d6;">
+    <td colspan="2">Total Income</td>
+    <td>Ksh ${totalIncome.toFixed(2)}</td>
+    <td></td>
+  </tr>
+`;
+
 
       expenditureRows.filter(row =>
         (!expenseFilter || (row.Item && row.Item.toLowerCase().includes(expenseFilter)) || (row.Date && row.Date.toLowerCase().includes(expenseFilter)))
@@ -258,6 +266,14 @@ function sortExpense(column) {
         totalCost += cost;
         expenditureTable.innerHTML += `<tr class="${amount >= 5000 ? 'highlight-expense' : ''}"><td>${row.Date}</td><td>${row.Item}</td><td>Ksh ${amount.toFixed(2)}</td><td>Ksh ${cost.toFixed(2)}</td></tr>`;
       });
+      expenditureTable.innerHTML += `
+  <tr style="font-weight: bold; background: #ffe6cc;">
+    <td colspan="2">Total Expenditure</td>
+    <td>Ksh ${totalExpenditure.toFixed(2)}</td>
+    <td>Ksh ${totalCost.toFixed(2)}</td>
+  </tr>
+`;
+
 
       const net = totalIncome - totalExpenditure - totalCost;
       summaryDiv.innerHTML = `
