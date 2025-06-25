@@ -208,7 +208,7 @@
         <p><strong>Total Income:</strong> Ksh ${totalIncome.toFixed(2)}</p>
         <p><strong>Total Expenditure:</strong> Ksh ${totalExpenditure.toFixed(2)}</p>
         <p><strong>Transaction Costs:</strong> Ksh ${totalCost.toFixed(2)}</p>
-        <p><strong>Net Balance:</strong> Ksh ${net.toFixed(2)}</p>
+        <p><strong>Net Balance:</strong> <span class="${net >= 0 ? 'net-positive' : 'net-negative'}">Ksh ${net.toFixed(2)}</span></p>
       `;
     }
 
