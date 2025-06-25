@@ -217,12 +217,15 @@
       });
 
       const net = totalIncome - totalExpense - totalCost;
+      const netColor = net >= 0 ? 'green' : 'red';
+      const incomePct = totalIncome ? ((totalExpense + totalCost) / totalIncome * 100).toFixed(1) : 'N/A';
       document.getElementById("summary").innerHTML = `
-        <h3>Summary for ${month}</h3>
-        <p><strong>Total Income:</strong> Ksh ${totalIncome.toFixed(2)}</p>
-        <p><strong>Total Expenditure:</strong> Ksh ${totalExpense.toFixed(2)}</p>
-        <p><strong>Transaction Costs:</strong> Ksh ${totalCost.toFixed(2)}</p>
-        <p><strong>Net Balance:</strong> Ksh ${net.toFixed(2)}</p>`;
+        <h3>📋 Summary for ${month}</h3>
+        <p>💰 <strong>Total Income:</strong> Ksh ${totalIncome.toFixed(2)}</p>
+        <p>💸 <strong>Total Expenditure:</strong> Ksh ${totalExpense.toFixed(2)}</p>
+        <p>📦 <strong>Transaction Costs:</strong> Ksh ${totalCost.toFixed(2)}</p>
+        <p>📊 <strong>Spent % of Income:</strong> ${incomePct}%</p>
+        <p>🧮 <strong>Net Balance:</strong> <span style="color:${netColor}">Ksh ${net.toFixed(2)}</span></p>`;
     }
 
     function exportToPDF() {
@@ -286,4 +289,4 @@
       });
     });
   </script></body>
-</html>
+  </html>
