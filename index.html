@@ -131,6 +131,46 @@
     const expenditureCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
 
     let incomeData = {}, expenditureData = {}, currentMonth = "";
+    let incomeSort = { column: '', ascending: true };
+    let expenseSort = { column: '', ascending: true };
+  function compareValues(a, b, ascending) {
+    const valA = (a || '').toString().toLowerCase();
+    const valB = (b || '').toString().toLowerCase();
+    
+    if (!isNaN(parseFloat(a)) && !isNaN(parseFloat(b))) {
+    return ascending ? parseFloat(a) - parseFloat(b) : parseFloat(b) - parseFloat(a);
+  }
+    
+    return ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+}
+
+  function sortIncome(column) {
+    const data = incomeData[currentMonth] || [];
+    if (incomeSort.column === column) {
+    incomeSort.ascending = !incomeSort.ascending;
+  } else {
+    incomeSort.column = column;
+    incomeSort.ascending = true;
+  }
+
+  data.sort((a, b) => compareValues(a[column], b[column], incomeSort.ascending));
+  renderTables(currentMonth);
+}
+
+function sortExpense(column) {
+  const data = expenditureData[currentMonth] || [];
+  if (expenseSort.column === column) {
+    expenseSort.ascending = !expenseSort.ascending;
+  } else {
+    expenseSort.column = column;
+    expenseSort.ascending = true;
+  }
+
+  data.sort((a, b) => compareValues(a[column], b[column], expenseSort.ascending));
+  renderTables(currentMonth);
+}
+
+
 
     function parseCSV(url, callback) {
       Papa.parse(url, {
@@ -167,6 +207,9 @@
       });
       return grouped;
     }
+    function sortArrow(column, sortState) {
+      return sortState.column === column ? (sortState.ascending ? '⬆' : '⬇') : '';
+    }
 
     function renderTables(month) {
       currentMonth = month;
@@ -179,8 +222,22 @@
       const incomeFilter = document.getElementById('incomeFilter').value.toLowerCase();
       const expenseFilter = document.getElementById('expenseFilter').value.toLowerCase();
 
-      incomeTable.innerHTML = `<tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></tr>`;
-      expenditureTable.innerHTML = `<tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr>`;
+      incomeTable.innerHTML = `
+  <tr>
+    <th onclick="sortIncome('Date')">Date ${sortArrow('Date', incomeSort)}</th>
+    <th onclick="sortIncome('Name')">Name ${sortArrow('Name', incomeSort)}</th>
+    <th onclick="sortIncome('Amount')">Amount ${sortArrow('Amount', incomeSort)}</th>
+    <th>Phone</th>
+  </tr>`;
+
+      expenditureTable.innerHTML = `
+  <tr>
+    <th onclick="sortExpense('Date')">Date ${sortArrow('Date', expenseSort)}</th>
+    <th onclick="sortExpense('Item')">Item ${sortArrow('Item', expenseSort)}</th>
+    <th onclick="sortExpense('Amount')">Amount ${sortArrow('Amount', expenseSort)}</th>
+    <th onclick="sortExpense('Transaction Cost')">Transaction Cost ${sortArrow('Transaction Cost', expenseSort)}</th>
+  </tr>`;
+
 
       let totalIncome = 0, totalExpenditure = 0, totalCost = 0;
 
