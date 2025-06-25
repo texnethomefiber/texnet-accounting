@@ -128,6 +128,7 @@
     const incomeCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
     const expenditureCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
     let incomeData = {}, expenditureData = {}, currentMonth = "";
+    const sortStates = { income: {}, expense: {} };
 
     function formatMonth(dateStr) {
       const match = dateStr.match(/(\d{2})\/(\d{2})\/(\d{4})/);
@@ -161,6 +162,24 @@
         grouped[month].push(row);
       });
       return grouped;
+    }
+
+    function sortTable(type, key) {
+      const data = type === 'income' ? incomeData[currentMonth] : expenditureData[currentMonth];
+      const isAmount = key.toLowerCase().includes('amount') || key === 'Transaction Cost';
+      const direction = sortStates[type][key] = !sortStates[type][key];
+      data.sort((a, b) => {
+        let aVal = a[key] || "", bVal = b[key] || "";
+        if (isAmount) {
+          aVal = parseFloat(aVal.replace(/[^\d.]/g, "")) || 0;
+          bVal = parseFloat(bVal.replace(/[^\d.]/g, "")) || 0;
+        } else {
+          aVal = aVal.toString().toLowerCase();
+          bVal = bVal.toString().toLowerCase();
+        }
+        return direction ? (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) : (aVal < bVal ? 1 : aVal > bVal ? -1 : 0);
+      });
+      renderTables(currentMonth);
     }
 
     function renderTables(month) {
@@ -206,23 +225,6 @@
         <p><strong>Net Balance:</strong> Ksh ${net.toFixed(2)}</p>`;
     }
 
-    function sortTable(type, key) {
-      const data = type === 'income' ? incomeData[currentMonth] : expenditureData[currentMonth];
-      const isAmount = key.toLowerCase().includes('amount') || key === 'Transaction Cost';
-      data.sort((a, b) => {
-        let aVal = a[key] || "", bVal = b[key] || "";
-        if (isAmount) {
-          aVal = parseFloat(aVal.replace(/[^\d.]/g, "")) || 0;
-          bVal = parseFloat(bVal.replace(/[^\d.]/g, "")) || 0;
-        } else {
-          aVal = aVal.toString().toLowerCase();
-          bVal = bVal.toString().toLowerCase();
-        }
-        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-      });
-      renderTables(currentMonth);
-    }
-
     function exportToPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -247,18 +249,15 @@
 
     function exportToExcel() {
       const wb = XLSX.utils.book_new();
-
       const summaryText = document.getElementById("summary").innerText.split("\n").map(line => [line]);
       const wsSummary = XLSX.utils.aoa_to_sheet(summaryText);
       XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
 
-      const incomeRows = [...document.querySelectorAll("#incomeTable tr")].map(row =>
-        [...row.children].map(cell => cell.innerText));
+      const incomeRows = [...document.querySelectorAll("#incomeTable tr")].map(row => [...row.children].map(cell => cell.innerText));
       const wsIncome = XLSX.utils.aoa_to_sheet(incomeRows);
       XLSX.utils.book_append_sheet(wb, wsIncome, "Income");
 
-      const expRows = [...document.querySelectorAll("#expenditureTable tr")].map(row =>
-        [...row.children].map(cell => cell.innerText));
+      const expRows = [...document.querySelectorAll("#expenditureTable tr")].map(row => [...row.children].map(cell => cell.innerText));
       const wsExp = XLSX.utils.aoa_to_sheet(expRows);
       XLSX.utils.book_append_sheet(wb, wsExp, "Expenditure");
 
