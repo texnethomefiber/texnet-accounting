@@ -1,286 +1,331 @@
 <!DOCTYPE html><html>
 <head>
-  <title>TEXNET HOME FIBER Monthly Financial Audit</title>
+  <title>Monthly Financial Auditor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      transition: background 0.3s, color 0.3s;
-    }
-    body.light { background: #f0f4f8; color: #333; }
-    body.dark { background: #1e1e1e; color: #f0f0f0; }.header-box {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+      color: #333;
+    }h2 {
   text-align: center;
-  padding: 20px;
-  background-color: #0077cc;
-  color: white;
-  border-radius: 10px;
-  margin: 10px;
+  color: #005792;
 }
 
-.btn-group button {
-  margin: 5px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  background-color: #0077cc;
-  color: white;
-  cursor: pointer;
+h3 {
+  margin-top: 40px;
+  color: #00406b;
 }
 
-.btn-group button:hover {
-  background-color: #005fa3;
-}
-
-table {
-  width: 90%;
-  margin: 20px auto;
-  border-collapse: collapse;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-th, td {
-  padding: 10px;
-  border: 1px solid #ccc;
-  text-align: left;
-}
-
-#loginOverlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.85); display: flex;
-  align-items: center; justify-content: center; z-index: 9999;
-}
-
-#loginBox {
-  background: white; padding: 20px; border-radius: 10px;
-  max-width: 300px; width: 100%; text-align: center;
+label, select {
+  display: block;
+  margin-top: 10px;
 }
 
 select {
-  display: block;
-  margin: 0 auto;
-  padding: 8px;
-  font-size: 1rem;
-  border-radius: 6px;
+  padding: 10px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-width: 300px;
+}
+
+.summary {
+  background: #e3f2fd;
+  border-left: 6px solid #2196F3;
+  padding: 15px 20px;
+  border-radius: 5px;
+  margin-top: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.summary p {
+  margin: 6px 0;
+  font-weight: 500;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
   margin-top: 10px;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+th, td {
+  text-align: left;
+  padding: 12px 14px;
+}
+
+th {
+  background-color: #007acc;
+  color: #fff;
+  font-weight: 600;
+  border-bottom: 2px solid #005f99;
+}
+
+td {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+tr:nth-child(even) td {
+  background-color: #f9fbfc;
+}
+
+tr:hover td {
+  background-color: #e6f4ff;
+}
+
+th.sortable {
+  cursor: pointer;
+}
+
+tr.highlight-income {
+  background-color: #e6f9e6 !important;
+}
+
+tr.highlight-expense {
+  background-color: #ffe6e6 !important;
+}
+
+@media screen and (max-width: 768px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead tr {
+    display: none;
+  }
+
+  tr {
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    background: #fff;
+  }
+
+  td {
+    border: none;
+    position: relative;
+    padding-left: 50%;
+  }
+
+  td::before {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    width: 45%;
+    white-space: nowrap;
+    font-weight: bold;
+  }
+
+  #incomeTable td:nth-of-type(1)::before { content: "Date"; }
+  #incomeTable td:nth-of-type(2)::before { content: "Name"; }
+  #incomeTable td:nth-of-type(3)::before { content: "Amount"; }
+  #incomeTable td:nth-of-type(4)::before { content: "Phone"; }
+
+  #expenditureTable td:nth-of-type(1)::before { content: "Date"; }
+  #expenditureTable td:nth-of-type(2)::before { content: "Item"; }
+  #expenditureTable td:nth-of-type(3)::before { content: "Amount"; }
+  #expenditureTable td:nth-of-type(4)::before { content: "Transaction Cost"; }
 }
 
   </style>
 </head>
-<body class="light">
-<div id="contentToExport">
-  <div class="header-box">
-    <h1>TEXNET HOME FIBER</h1>
-    <h2>Monthly Financial Audit</h2>
-    <div class="btn-group">
-      <button onclick="toggleTheme()">Toggle Dark/Light</button>
-      <button onclick="downloadPDF()">Export to PDF</button>
-      <button onclick="downloadExcel()">Export to Excel</button>
-    </div>
-    <select id="monthSelect"></select>
-  </div>  <table id="summaryTable"></table>
-  <h3 style="text-align:center">Income Details</h3>
-  <table id="incomeDetails" class="display"></table>
-  <h3 style="text-align:center">Expenditure Details</h3>
-  <table id="expenditureDetails" class="display"></table>
-</div><script>
+<body>
+  <h2>📊 Monthly Financial Auditor</h2>
+  <label for="monthSelect">Select Month:</label>
+  <select id="monthSelect"></select>
+  <div class="summary" id="summary"></div>
+  <h3>📥 Income</h3>
+  <table id="incomeTable"></table>
+  <h3>📤 Expenditure</h3>
+  <table id="expenditureTable"></table>  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>  <script>
+    const incomeCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
+    const expenditureCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
 
-const INCOME_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=280109793&single=true&output=csv";
-const EXPENSE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQvwH72sBpfyaBheSCdEdnlqq3b7l4YMzA_-6-k06624D2yc3ko0vUVgh5taJzyPsqFN9kqWNVgMQk/pub?gid=1600049240&single=true&output=csv";
+    let incomeData = {}, expenditureData = {};
+    let itemSortAsc = true, incomeDateSortAsc = true, expenditureDateSortAsc = true;
 
-let incomeMap = {}, expenseMap = {}, months = [], allIncome = [], allExpense = [];
-let selectedMonth = "";
-
-
-
-function toggleTheme() {
-  const body = document.body;
-  body.className = body.className === "light" ? "dark" : "light";
-}
-
-function formatMonth(dateStr) {
-  const parts = dateStr.split(/[\/\s:]/);
-  if (parts.length < 3) return null;
-  const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-  return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
-}
-
-function processData() {
-  incomeMap = {}; expenseMap = {}; months = []; allIncome = []; allExpense = [];
-
-  Papa.parse(INCOME_CSV, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      allIncome = results.data;
-      results.data.forEach(row => {
-        const month = formatMonth(row.Date);
-        if (!month) return;
-        if (!incomeMap[month]) incomeMap[month] = 0;
-        incomeMap[month] += parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
-        if (!months.includes(month)) months.push(month);
+    function parseCSV(url, callback) {
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        complete: results => {
+          const cleaned = results.data.map(cleanHeaders);
+          callback(cleaned);
+        }
       });
-      checkReady();
     }
-  });
 
-  Papa.parse(EXPENSE_CSV, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      allExpense = results.data;
-      results.data.forEach(row => {
-        const month = formatMonth(row.Date);
-        if (!month) return;
-        if (!expenseMap[month]) expenseMap[month] = { exp: 0, cost: 0 };
-        expenseMap[month].exp += parseFloat((row.Amount || "0").replace(/[^\d.]/g, "")) || 0;
-        expenseMap[month].cost += parseFloat((row["Transaction Cost"] || "0").replace(/[^\d.]/g, "")) || 0;
-        if (!months.includes(month)) months.push(month);
+    function cleanHeaders(row) {
+      const newRow = {};
+      Object.keys(row).forEach(k => {
+        const cleanKey = k.replace(/\uFEFF/g, '').trim();
+        newRow[cleanKey] = row[k];
       });
-      checkReady();
+      return newRow;
     }
-  });
-}
 
-function checkReady() {
-  if (Object.keys(incomeMap).length && Object.keys(expenseMap).length) {
-    populateMonthSelect();
-  }
-}
+    function formatMonth(dateStr) {
+      const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (!match) return null;
+      const [_, day, month, year] = match;
+      const date = new Date(`${month}/${day}/${year}`);
+      return isNaN(date) ? null : date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
 
-function populateMonthSelect() {
-  const sel = document.getElementById("monthSelect");
-  sel.innerHTML = months.sort((a, b) => new Date('1 ' + a) - new Date('1 ' + b))
-    .map(m => `<option value="${m}">${m}</option>`).join('');
-  selectedMonth = sel.value;
-  drawSelectedMonth();
-  sel.onchange = () => {
-    selectedMonth = sel.value;
-    drawSelectedMonth();
-  }
-}
+    function groupByMonth(data, dateKey) {
+      const grouped = {};
+      data.forEach(row => {
+        const month = formatMonth(row[dateKey]);
+        if (!month) return;
+        if (!grouped[month]) grouped[month] = [];
+        grouped[month].push(row);
+      });
+      Object.keys(grouped).forEach(month => {
+        grouped[month].sort((a, b) => {
+          const dateA = new Date((a[dateKey] || "").split(" ")[0].split("/").reverse().join("/"));
+          const dateB = new Date((b[dateKey] || "").split(" ")[0].split("/").reverse().join("/"));
+          return dateB - dateA;
+        });
+      });
+      return grouped;
+    }
 
-function drawSelectedMonth() {
-  const income = incomeMap[selectedMonth] || 0;
-  const expense = expenseMap[selectedMonth]?.exp || 0;
-  const cost = expenseMap[selectedMonth]?.cost || 0;
-  const net = income - expense - cost;
+    function renderTables(month) {
+      const incomeRows = incomeData[month] || [];
+      const expenditureRows = expenditureData[month] || [];
+      const incomeTable = document.getElementById('incomeTable');
+      const expenditureTable = document.getElementById('expenditureTable');
+      const summaryDiv = document.getElementById('summary');
+      const arrow = dir => dir ? '⬆' : '⬇';
 
-  document.getElementById("summaryTable").innerHTML = `
-    <thead><tr><th>Category</th><th>Amount (Ksh)</th></tr></thead>
-    <tbody>
-      <tr><td>Income</td><td>${income.toFixed(2)}</td></tr>
-      <tr><td>Expenditure</td><td>${expense.toFixed(2)}</td></tr>
-      <tr><td>Transaction Cost</td><td>${cost.toFixed(2)}</td></tr>
-      <tr><td><strong>Net</strong></td><td><strong>${net.toFixed(2)}</strong></td></tr>
-    </tbody>
-  `;
+      incomeTable.innerHTML = `
+        <tr>
+          <th id="sortIncomeDate" class="sortable">Date ${arrow(incomeDateSortAsc)}</th>
+          <th>Name</th>
+          <th>Amount</th>
+          <th>Phone</th>
+        </tr>
+      `;
 
-  const incomeTable = $('#incomeDetails');
-  const incomeRows = allIncome.filter(r => formatMonth(r.Date) === selectedMonth).map(r =>
-    `<tr><td>${r.Date}</td><td>${r.Name}</td><td>${r.Amount}</td><td>${r.Phone}</td></tr>`
-  ).join('');
-  incomeTable.html(`<thead><tr><th>Date</th><th>Name</th><th>Amount</th><th>Phone</th></thead><tbody>${incomeRows}</tbody>`);
-  if (!$.fn.DataTable.isDataTable('#incomeDetails')) incomeTable.DataTable();
+      expenditureTable.innerHTML = `
+        <tr>
+          <th id="sortExpenditureDate" class="sortable">Date ${arrow(expenditureDateSortAsc)}</th>
+          <th id="sortItem" class="sortable">Item ${arrow(itemSortAsc)}</th>
+          <th>Amount</th>
+          <th>Transaction Cost</th>
+        </tr>
+      `;
 
-  const expenseTable = $('#expenditureDetails');
-  const expenseRows = allExpense.filter(r => formatMonth(r.Date) === selectedMonth).map(r =>
-    `<tr><td>${r.Date}</td><td>${r.Item}</td><td>${r.Amount}</td><td>${r["Transaction Cost"] || "0.00"}</td></tr>`
-  ).join('');
-  expenseTable.html(`<thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Transaction Cost</th></tr></thead><tbody>${expenseRows}</tbody>`);
-  if (!$.fn.DataTable.isDataTable('#expenditureDetails')) expenseTable.DataTable();
-}
+      let totalIncome = 0, totalExpenditure = 0, totalCost = 0;
 
-async function downloadPDF() {
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
+      incomeRows.forEach(row => {
+        let amount = parseFloat((row.Amount || "").replace("Ksh", "").replace(/,/g, "").trim());
+        amount = isNaN(amount) ? 0 : amount;
+        totalIncome += amount;
+        const incomeClass = amount >= 10000 ? "highlight-income" : "";
+        incomeTable.innerHTML += `
+          <tr class="${incomeClass}">
+            <td>${row.Date}</td>
+            <td>${row.Name}</td>
+            <td>Ksh ${amount.toFixed(2)}</td>
+            <td>${row.Phone}</td>
+          </tr>
+        `;
+      });
 
-  // Page 1: Summary Table
-  pdf.setFontSize(16);
-  pdf.text(`TEXNET HOME FIBER`, 10, 15);
-  pdf.setFontSize(12);
-  pdf.text(`${selectedMonth} - Financial Summary`, 10, 25);
+      expenditureRows.forEach(row => {
+        let amount = parseFloat((row.Amount || "").replace("Ksh", "").replace(/,/g, "").trim());
+        let cost = parseFloat((row["Transaction Cost"] || "").replace("Ksh", "").replace(/,/g, "").trim());
+        amount = isNaN(amount) ? 0 : amount;
+        cost = isNaN(cost) ? 0 : cost;
+        totalExpenditure += amount;
+        totalCost += cost;
+        let expenseClass = amount >= 5000 ? "highlight-expense" : "";
+        expenditureTable.innerHTML += `
+          <tr class="${expenseClass}">
+            <td>${row.Date}</td>
+            <td>${row.Item}</td>
+            <td>Ksh ${amount.toFixed(2)}</td>
+            <td>Ksh ${cost.toFixed(2)}</td>
+          </tr>
+        `;
+      });
 
-  const summaryRows = [];
-  document.querySelectorAll('#summaryTable tbody tr').forEach(row => {
-    const cols = row.querySelectorAll('td');
-    summaryRows.push([cols[0].innerText, cols[1].innerText]);
-  });
+      const net = totalIncome - totalExpenditure - totalCost;
+      summaryDiv.innerHTML = `
+        <h3>Summary for ${month}</h3>
+        <p><strong>Total Income:</strong> Ksh ${totalIncome.toFixed(2)}</p>
+        <p><strong>Total Expenditure:</strong> Ksh ${totalExpenditure.toFixed(2)}</p>
+        <p><strong>Transaction Costs:</strong> Ksh ${totalCost.toFixed(2)}</p>
+        <p><strong>Net Balance:</strong> Ksh ${net.toFixed(2)}</p>
+      `;
+    }
 
-  pdf.autoTable({
-    startY: 30,
-    head: [['Category', 'Amount (Ksh)']],
-    body: summaryRows,
-    theme: 'grid'
-  });
+    function populateMonthSelect() {
+      const allMonths = new Set([...Object.keys(incomeData), ...Object.keys(expenditureData)]);
+      const sortedMonths = Array.from(allMonths).sort((a, b) => new Date(a) - new Date(b));
+      const select = document.getElementById('monthSelect');
+      select.innerHTML = sortedMonths.map(m => `<option value="${m}">${m}</option>`).join("");
+      select.onchange = () => renderTables(select.value);
+      if (sortedMonths.length) {
+        const defaultMonth = sortedMonths[sortedMonths.length - 1];
+        select.value = defaultMonth;
+        renderTables(defaultMonth);
+      }
+    }
 
-  // Page 2: Income
-  pdf.addPage();
-  pdf.setFontSize(16);
-  pdf.text(`Income Details - ${selectedMonth}`, 10, 15);
+    document.addEventListener("click", function (e) {
+      const selectedMonth = document.getElementById("monthSelect").value;
+      if (e.target.id === "sortItem") {
+        const data = expenditureData[selectedMonth];
+        if (!data) return;
+        data.sort((a, b) => itemSortAsc
+          ? (a.Item || "").localeCompare(b.Item || "")
+          : (b.Item || "").localeCompare(a.Item || ""));
+        itemSortAsc = !itemSortAsc;
+        renderTables(selectedMonth);
+      }
+      if (e.target.id === "sortIncomeDate") {
+        const data = incomeData[selectedMonth];
+        if (!data) return;
+        data.sort((a, b) => {
+          const dateA = new Date((a.Date || "").split(" ")[0].split("/").reverse().join("/"));
+          const dateB = new Date((b.Date || "").split(" ")[0].split("/").reverse().join("/"));
+          return incomeDateSortAsc ? dateA - dateB : dateB - dateA;
+        });
+        incomeDateSortAsc = !incomeDateSortAsc;
+        renderTables(selectedMonth);
+      }
+      if (e.target.id === "sortExpenditureDate") {
+        const data = expenditureData[selectedMonth];
+        if (!data) return;
+        data.sort((a, b) => {
+          const dateA = new Date((a.Date || "").split("/").reverse().join("/"));
+          const dateB = new Date((b.Date || "").split("/").reverse().join("/"));
+          return expenditureDateSortAsc ? dateA - dateB : dateB - dateA;
+        });
+        expenditureDateSortAsc = !expenditureDateSortAsc;
+        renderTables(selectedMonth);
+      }
+    });
 
-  const income = allIncome.filter(r => formatMonth(r.Date) === selectedMonth);
-  const incomeRows = income.map(r => [
-    r.Date || '', r.Name || '', r.Amount || '', r.Phone || ''
-  ]);
-
-  pdf.autoTable({
-    startY: 25,
-    head: [['Date', 'Name', 'Amount', 'Phone']],
-    body: incomeRows,
-    theme: 'grid'
-  });
-
-  // Page 3: Expenditure
-  pdf.addPage();
-  pdf.setFontSize(16);
-  pdf.text(`Expenditure Details - ${selectedMonth}`, 10, 15);
-
-  const expense = allExpense.filter(r => formatMonth(r.Date) === selectedMonth);
-  const expenseRows = expense.map(r => [
-    r.Date || '', r.Item || '', r.Amount || '', r["Transaction Cost"] || '0.00'
-  ]);
-
-  pdf.autoTable({
-    startY: 25,
-    head: [['Date', 'Item', 'Amount', 'Transaction Cost']],
-    body: expenseRows,
-    theme: 'grid'
-  });
-
-  pdf.save(`TEXNET-${selectedMonth.replace(/ /g, '_')}-Audit.pdf`);
-}
-
-function downloadExcel() {
-  const incomeData = [
-    ["Income Details"],
-    ["Date", "Name", "Amount", "Phone"],
-    ...allIncome.map(row => [row.Date, row.Name, row.Amount, row.Phone])
-  ];
-
-  const expenseData = [
-    ["Expenditure Details"],
-    ["Date", "Item", "Amount", "Transaction Cost"],
-    ...allExpense.map(row => [row.Date, row.Item, row.Amount, row["Transaction Cost"]])
-  ];
-
-  const wb = XLSX.utils.book_new();
-  const wsIncome = XLSX.utils.aoa_to_sheet(incomeData);
-  const wsExpense = XLSX.utils.aoa_to_sheet(expenseData);
-
-  XLSX.utils.book_append_sheet(wb, wsIncome, "Income");
-  XLSX.utils.book_append_sheet(wb, wsExpense, "Expenditure");
-
-  XLSX.writeFile(wb, "full-audit.xlsx");
-}
-
-processData();
-</script></body>
-  </html>
+    parseCSV(incomeCSV, data => {
+      incomeData = groupByMonth(data, "Date");
+      parseCSV(expenditureCSV, data2 => {
+        expenditureData = groupByMonth(data2, "Date");
+        populateMonthSelect();
+      });
+    });
+  </script></body>
+</html>
