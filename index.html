@@ -300,59 +300,96 @@ function sortExpense(column) {
     }
     
     function exportToPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      // Title Page - Summary
-      doc.setFontSize(18);
-      doc.text("TEXNET HOME FIBER MONTHLY FINANCIAL AUDIT", 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Summary for ${currentMonth}`, 20, 40);
-      
-      const summaryEl = document.getElementById("summary");
-      const summaryLines = summaryEl.innerText.split("\n");
-      let y = 60;
-      summaryLines.forEach(line => {
-        doc.text(line.trim(), 20, y);
-        y += 15;
-      });
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
 
-  // Page 2 - Income Table
-  doc.addPage();
-  doc.setFontSize(16);
-  doc.text("Income Details", 20, 20);
+  // Page 1: Summary
+  doc.setFontSize(18);
+  doc.setFont(undefined, "bold");
+  doc.text("TEXNET HOME FIBER MONTHLY FINANCIAL AUDIT", 20, 20);
 
-  const incomeRows = [...document.querySelectorAll("#incomeTable tr")].slice(1).map(tr => {
-    return [...tr.querySelectorAll("td")].map(td => td.innerText);
+  doc.setFontSize(14);
+  doc.text(`Summary for ${currentMonth}`, 20, 40);
+
+  doc.setFontSize(12);
+  doc.setFont(undefined, "normal");
+
+  const summaryEl = document.getElementById("summary");
+  const summaryLines = summaryEl.innerText
+    .split("\n")
+    .filter(line => !line.toLowerCase().includes("summary for"));
+
+  let y = 60;
+  summaryLines.forEach(line => {
+    doc.setFont(undefined, "bold");
+    const parts = line.split(":");
+    if (parts.length > 1) {
+      doc.text(parts[0] + ":", 20, y);
+      doc.setFont(undefined, "normal");
+      doc.text(parts.slice(1).join(":").trim(), 80, y);
+    } else {
+      doc.text(line, 20, y);
+    }
+    y += 15;
   });
 
-  const incomeHeader = [...document.querySelectorAll("#incomeTable th")].map(th => th.innerText);
+  // Page 2: Income Table
+  doc.addPage();
+  doc.setFontSize(16);
+  doc.setFont(undefined, "bold");
+  doc.text("Income Details", 20, 20);
+
+  const incomeTable = document.getElementById("incomeTable");
+  const incomeHeader = [...incomeTable.querySelectorAll("th")].map(th => th.innerText);
+  const incomeRows = [...incomeTable.querySelectorAll("tr")]
+    .slice(1) // Skip header row
+    .map(tr => [...tr.querySelectorAll("td")].map(td => td.innerText));
+
   doc.autoTable({
     head: [incomeHeader],
     body: incomeRows,
     startY: 30,
     styles: { fontSize: 10 },
-    theme: "grid"
+    theme: "grid",
+    didParseCell: function (data) {
+      if (
+        data.row.index === incomeRows.length - 1 &&
+        (data.cell.raw.includes("Total Income") || data.cell.raw.includes("Ksh"))
+      ) {
+        data.cell.styles.fontStyle = "bold";
+      }
+    }
   });
 
-  // Page 3 - Expenditure Table
+  // Page 3: Expenditure Table
   doc.addPage();
   doc.setFontSize(16);
+  doc.setFont(undefined, "bold");
   doc.text("Expenditure Details", 20, 20);
 
-  const expenseRows = [...document.querySelectorAll("#expenditureTable tr")].slice(1).map(tr => {
-    return [...tr.querySelectorAll("td")].map(td => td.innerText);
-  });
+  const expenseTable = document.getElementById("expenditureTable");
+  const expenseHeader = [...expenseTable.querySelectorAll("th")].map(th => th.innerText);
+  const expenseRows = [...expenseTable.querySelectorAll("tr")]
+    .slice(1)
+    .map(tr => [...tr.querySelectorAll("td")].map(td => td.innerText));
 
-  const expenseHeader = [...document.querySelectorAll("#expenditureTable th")].map(th => th.innerText);
   doc.autoTable({
     head: [expenseHeader],
     body: expenseRows,
     startY: 30,
     styles: { fontSize: 10 },
-    theme: "grid"
+    theme: "grid",
+    didParseCell: function (data) {
+      if (
+        data.row.index === expenseRows.length - 1 &&
+        (data.cell.raw.includes("Total Expenditure") || data.cell.raw.includes("Ksh"))
+      ) {
+        data.cell.styles.fontStyle = "bold";
+      }
+    }
   });
 
+  // Save file
   doc.save(`financial_audit_${currentMonth.replace(/\s+/g, '_')}.pdf`);
 }
 
