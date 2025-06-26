@@ -3,6 +3,7 @@
   <title>TEXNET HOME FIBER MONTHLY FINANCIAL AUDIT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
@@ -297,37 +298,63 @@ function sortExpense(column) {
         renderTables(defaultMonth);
       }
     }
-
+    
     function exportToPDF() {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('p', 'pt', 'a4');
-      const summary = document.getElementById("summary");
-      const incomeTable = document.getElementById("incomeTable");
-      const expenseTable = document.getElementById("expenditureTable");
-
-      const options = { background: '#fff', scale: 2 };
-
-      html2canvas(summary, options).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        doc.text("TEXNET HOME FIBER MONTHLY FINANCIAL AUDIT", 40, 30);
-        doc.addImage(imgData, 'PNG', 40, 40, 500, canvas.height * 500 / canvas.width);
-
-        html2canvas(incomeTable, options).then(incCanvas => {
-          doc.addPage();
-          const incImg = incCanvas.toDataURL('image/png');
-          doc.text("Income Details", 40, 30);
-          doc.addImage(incImg, 'PNG', 40, 40, 500, incCanvas.height * 500 / incCanvas.width);
-
-          html2canvas(expenseTable, options).then(expCanvas => {
-            doc.addPage();
-            const expImg = expCanvas.toDataURL('image/png');
-            doc.text("Expenditure Details", 40, 30);
-            doc.addImage(expImg, 'PNG', 40, 40, 500, expCanvas.height * 500 / expCanvas.width);
-            doc.save(`financial_audit_${currentMonth.replace(/\s+/g, '_')}.pdf`);
-          });
-        });
+      const doc = new jsPDF();
+      
+      // Title Page - Summary
+      doc.setFontSize(18);
+      doc.text("TEXNET HOME FIBER MONTHLY FINANCIAL AUDIT", 20, 20);
+      doc.setFontSize(12);
+      doc.text(`Summary for ${currentMonth}`, 20, 40);
+      
+      const summaryEl = document.getElementById("summary");
+      const summaryLines = summaryEl.innerText.split("\n");
+      let y = 60;
+      summaryLines.forEach(line => {
+        doc.text(line.trim(), 20, y);
+        y += 15;
       });
-    }
+
+  // Page 2 - Income Table
+  doc.addPage();
+  doc.setFontSize(16);
+  doc.text("📥 Income Details", 20, 20);
+
+  const incomeRows = [...document.querySelectorAll("#incomeTable tr")].slice(1).map(tr => {
+    return [...tr.querySelectorAll("td")].map(td => td.innerText);
+  });
+
+  const incomeHeader = [...document.querySelectorAll("#incomeTable th")].map(th => th.innerText);
+  doc.autoTable({
+    head: [incomeHeader],
+    body: incomeRows,
+    startY: 30,
+    styles: { fontSize: 10 },
+    theme: "grid"
+  });
+
+  // Page 3 - Expenditure Table
+  doc.addPage();
+  doc.setFontSize(16);
+  doc.text("📤 Expenditure Details", 20, 20);
+
+  const expenseRows = [...document.querySelectorAll("#expenditureTable tr")].slice(1).map(tr => {
+    return [...tr.querySelectorAll("td")].map(td => td.innerText);
+  });
+
+  const expenseHeader = [...document.querySelectorAll("#expenditureTable th")].map(th => th.innerText);
+  doc.autoTable({
+    head: [expenseHeader],
+    body: expenseRows,
+    startY: 30,
+    styles: { fontSize: 10 },
+    theme: "grid"
+  });
+
+  doc.save(`financial_audit_${currentMonth.replace(/\s+/g, '_')}.pdf`);
+}
 
     function exportToExcel() {
       const wb = XLSX.utils.book_new();
