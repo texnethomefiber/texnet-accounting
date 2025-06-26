@@ -298,29 +298,25 @@ function sortExpense(column) {
         renderTables(defaultMonth);
       }
     }
-    
     function exportToPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
 
   // Page 1: Summary
-  doc.setFontSize(18);
-  doc.setFont(undefined, "bold");
-  doc.text("TEXNET HOME FIBER MONTHLY FINANCIAL AUDIT", 20, 20);
-
-  doc.setFontSize(14);
-  doc.text(`Summary for ${currentMonth}`, 20, 40);
-
-  doc.setFontSize(12);
-  doc.setFont(undefined, "normal");
-
-  const summaryEl = document.getElementById("summary");
-  const summaryLines = summaryEl.innerText
-    .split("\n")
-    .filter(line => !line.toLowerCase().includes("summary for"));
-
-  let y = 60;
-  summaryLines.forEach(line => {
+      doc.setFontSize(18);
+      doc.setFont(undefined, "bold");
+      doc.text("TEXNET HOME FIBER MONTHLY FINANCIAL AUDIT", 20, 20);
+      doc.setFontSize(14);
+      doc.text(`Summary for ${currentMonth}`, 20, 40);
+      doc.setFontSize(12);
+      doc.setFont(undefined, "normal");
+      
+      const summaryEl = document.getElementById("summary");
+      const summaryLines = summaryEl.innerText
+        .split("\n")
+        .filter(line => !line.toLowerCase().includes("summary for"));
+      let y = 60;
+      summaryLines.forEach(line => {
     doc.setFont(undefined, "bold");
     const parts = line.split(":");
     if (parts.length > 1) {
