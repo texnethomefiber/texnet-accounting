@@ -320,7 +320,7 @@ function sortExpense(column) {
   // Page 2 - Income Table
   doc.addPage();
   doc.setFontSize(16);
-  doc.text("📥 Income Details", 20, 20);
+  doc.text("Income Details", 20, 20);
 
   const incomeRows = [...document.querySelectorAll("#incomeTable tr")].slice(1).map(tr => {
     return [...tr.querySelectorAll("td")].map(td => td.innerText);
@@ -338,7 +338,7 @@ function sortExpense(column) {
   // Page 3 - Expenditure Table
   doc.addPage();
   doc.setFontSize(16);
-  doc.text("📤 Expenditure Details", 20, 20);
+  doc.text("Expenditure Details", 20, 20);
 
   const expenseRows = [...document.querySelectorAll("#expenditureTable tr")].slice(1).map(tr => {
     return [...tr.querySelectorAll("td")].map(td => td.innerText);
