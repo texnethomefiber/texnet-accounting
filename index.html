@@ -298,96 +298,74 @@ function sortExpense(column) {
         renderTables(defaultMonth);
       }
     }
-    function exportToPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+    
+  async function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-  // Page 1: Summary
-      doc.setFontSize(18);
-      doc.setFont(undefined, "bold");
-      doc.text("TEXNET HOME FIBER MONTHLY FINANCIAL AUDIT", 20, 20);
-      doc.setFontSize(14);
-      doc.text(`Summary for ${currentMonth}`, 20, 40);
-      doc.setFontSize(12);
-      doc.setFont(undefined, "normal");
-      
-      const summaryEl = document.getElementById("summary");
-      const summaryLines = summaryEl.innerText
-        .split("\n")
-        .filter(line => !line.toLowerCase().includes("summary for"));
-      let y = 60;
-      summaryLines.forEach(line => {
-    doc.setFont(undefined, "bold");
-    const parts = line.split(":");
-    if (parts.length > 1) {
-      doc.text(parts[0] + ":", 20, y);
-      doc.setFont(undefined, "normal");
-      doc.text(parts.slice(1).join(":").trim(), 80, y);
-    } else {
-      doc.text(line, 20, y);
-    }
-    y += 15;
-  });
+    // === 1. Summary ===
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Summary for June 2025", 20, 20);
 
-  // Page 2: Income Table
-  doc.addPage();
-  doc.setFontSize(16);
-  doc.setFont(undefined, "bold");
-  doc.text("Income Details", 20, 20);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
 
-  const incomeTable = document.getElementById("incomeTable");
-  const incomeHeader = [...incomeTable.querySelectorAll("th")].map(th => th.innerText);
-  const incomeRows = [...incomeTable.querySelectorAll("tr")]
-    .slice(1) // Skip header row
-    .map(tr => [...tr.querySelectorAll("td")].map(td => td.innerText));
+    const summaryData = [...document.querySelectorAll("#summary-table tbody tr")].map(tr =>
+      [...tr.querySelectorAll("td")].map(td => td.innerText)
+    );
 
-  doc.autoTable({
-    head: [incomeHeader],
-    body: incomeRows,
-    startY: 30,
-    styles: { fontSize: 10 },
-    theme: "grid",
-    didParseCell: function (data) {
-      if (
-        data.row.index === incomeRows.length - 1 &&
-        (data.cell.raw.includes("Total Income") || data.cell.raw.includes("Ksh"))
-      ) {
-        data.cell.styles.fontStyle = "bold";
+    doc.autoTable({
+      startY: 30,
+      head: [["Type", "Total"]],
+      body: summaryData,
+      styles: { fontSize: 11 },
+      headStyles: { fillColor: [22, 160, 133], textColor: 255, fontStyle: "bold" },
+      columnStyles: {
+        1: { fontStyle: 'bold' } // Bold totals column
       }
-    }
-  });
+    });
 
-  // Page 3: Expenditure Table
-  doc.addPage();
-  doc.setFontSize(16);
-  doc.setFont(undefined, "bold");
-  doc.text("Expenditure Details", 20, 20);
+    // === 2. Income Table ===
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Income Details", 20, 20);
 
-  const expenseTable = document.getElementById("expenditureTable");
-  const expenseHeader = [...expenseTable.querySelectorAll("th")].map(th => th.innerText);
-  const expenseRows = [...expenseTable.querySelectorAll("tr")]
-    .slice(1)
-    .map(tr => [...tr.querySelectorAll("td")].map(td => td.innerText));
+    const incomeHeader = [...document.querySelectorAll("#income-table thead th")].map(th => th.innerText);
+    const incomeBody = [...document.querySelectorAll("#income-table tbody tr")].map(tr =>
+      [...tr.querySelectorAll("td")].map(td => td.innerText)
+    );
 
-  doc.autoTable({
-    head: [expenseHeader],
-    body: expenseRows,
-    startY: 30,
-    styles: { fontSize: 10 },
-    theme: "grid",
-    didParseCell: function (data) {
-      if (
-        data.row.index === expenseRows.length - 1 &&
-        (data.cell.raw.includes("Total Expenditure") || data.cell.raw.includes("Ksh"))
-      ) {
-        data.cell.styles.fontStyle = "bold";
-      }
-    }
-  });
+    doc.autoTable({
+      startY: 30,
+      head: [incomeHeader],
+      body: incomeBody,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: "bold" },
+    });
 
-  // Save file
-  doc.save(`financial_audit_${currentMonth.replace(/\s+/g, '_')}.pdf`);
-}
+    // === 3. Expenditure Table ===
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Expenditure Details", 20, 20);
+
+    const expenseHeader = [...document.querySelectorAll("#expense-table thead th")].map(th => th.innerText);
+    const expenseBody = [...document.querySelectorAll("#expense-table tbody tr")].map(tr =>
+      [...tr.querySelectorAll("td")].map(td => td.innerText)
+    );
+
+    doc.autoTable({
+      startY: 30,
+      head: [expenseHeader],
+      body: expenseBody,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [192, 57, 43], textColor: 255, fontStyle: "bold" },
+    });
+
+    doc.save("Financial_Report_June_2025.pdf");
+  }
 
     function exportToExcel() {
       const wb = XLSX.utils.book_new();
