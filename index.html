@@ -112,6 +112,21 @@
   color: red;
   font-weight: bold;
 }
+    @media (max-width: 768px) {
+  table, th, td {
+    font-size: 12px;
+    padding: 8px;
+  }
+  .export-buttons {
+    display: flex;
+    flex-direction: column;
+  }
+  .export-buttons button {
+    margin-bottom: 10px;
+    width: 100%;
+  }
+}
+
   </style>
 </head>
 <body>
@@ -282,7 +297,9 @@ function sortExpense(column) {
         <p><strong>Total Income:</strong> Ksh ${totalIncome.toFixed(2)}</p>
         <p><strong>Total Expenditure:</strong> Ksh ${totalExpenditure.toFixed(2)}</p>
         <p><strong>Transaction Costs:</strong> Ksh ${totalCost.toFixed(2)}</p>
-        <p><strong>Net Balance:</strong> <span class="${net >= 0 ? 'net-positive' : 'net-negative'}">Ksh ${net.toFixed(2)}</span></p>
+        <p><strong>Income Entries:</strong> ${incomeRows.length}</p>
+        <p><strong>Expenditure Entries:</strong> ${expenditureRows.length}</p>
+        <p><strong>Net Balance:</strong>    <span class="${net >= 0 ? 'net-positive' : 'net-negative'}">     ${net >= 0 ? '📈' : '📉'} Ksh ${net.toFixed(2)}   </span> </p>
       `;
     }
 
@@ -391,12 +408,15 @@ function sortExpense(column) {
       XLSX.utils.book_append_sheet(wb, expenseWS, "Expenditure");
       XLSX.writeFile(wb, `financial_audit_${currentMonth.replace(/\s+/g, '_')}.xlsx`);
     }
+    
+    document.querySelectorAll('.export-buttons button').forEach(btn => btn.disabled = true);
 
     parseCSV(incomeCSV, data => {
       incomeData = groupByMonth(data, "Date");
       parseCSV(expenditureCSV, data2 => {
         expenditureData = groupByMonth(data2, "Date");
         populateMonthSelect();
+        document.querySelectorAll('.export-buttons button').forEach(btn => btn.disabled = false);
       });
     });
   </script></body>
