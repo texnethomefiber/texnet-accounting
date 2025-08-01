@@ -287,17 +287,23 @@ function sortExpense(column) {
     }
 
     function populateMonthSelect() {
-      const allMonths = new Set([...Object.keys(incomeData), ...Object.keys(expenditureData)]);
-      const sortedMonths = Array.from(allMonths).sort((a, b) => new Date(a) - new Date(b));
-      const select = document.getElementById('monthSelect');
-      select.innerHTML = sortedMonths.map(m => `<option value="${m}">${m}</option>`).join("");
-      select.onchange = () => renderTables(select.value);
-      if (sortedMonths.length) {
-        const defaultMonth = sortedMonths[sortedMonths.length - 1];
-        select.value = defaultMonth;
-        renderTables(defaultMonth);
-      }
-    }
+  const allMonths = new Set([...Object.keys(incomeData), ...Object.keys(expenditureData)]);
+  const sortedMonths = Array.from(allMonths).sort((a, b) => new Date(a) - new Date(b));
+  const select = document.getElementById('monthSelect');
+  select.innerHTML = sortedMonths.map(m => `<option value="${m}">${m}</option>`).join("");
+
+  select.onchange = () => {
+    localStorage.setItem("selectedMonth", select.value);
+    renderTables(select.value);
+  };
+
+  if (sortedMonths.length) {
+    const savedMonth = localStorage.getItem("selectedMonth");
+    const defaultMonth = sortedMonths.includes(savedMonth) ? savedMonth : sortedMonths[sortedMonths.length - 1];
+    select.value = defaultMonth;
+    renderTables(defaultMonth);
+  }
+}
     
   async function exportToPDF() {
   const { jsPDF } = window.jspdf;
