@@ -321,6 +321,27 @@ function sortExpense(column) {
     renderTables(defaultMonth);
   }
 }
+ function normalizeTableData(table) {
+  const rows = [];
+  const headers = table.querySelectorAll("tr")[0].querySelectorAll("th, td").length;
+
+  table.querySelectorAll("tr").forEach(tr => {
+    const cells = [...tr.querySelectorAll("th, td")];
+    const row = [];
+    cells.forEach(cell => {
+      const colspan = parseInt(cell.getAttribute("colspan") || "1", 10);
+      for (let i = 0; i < colspan; i++) {
+        row.push(cell.innerText.trim());
+      }
+    });
+
+    // Pad with empty strings if too short
+    while (row.length < headers) row.push("");
+    rows.push(row);
+  });
+
+  return rows;
+}   
     
   async function exportToPDF() {
   const { jsPDF } = window.jspdf;
@@ -360,9 +381,7 @@ function sortExpense(column) {
   doc.text("Income Details", 20, 20);
 
   const incomeTable = document.getElementById("incomeTable");
-  const incomeRows = [...incomeTable.querySelectorAll("tr")].map(tr =>
-    [...tr.querySelectorAll("th, td")].map(td => td.innerText)
-  );
+  const incomeRows = normalizeTableData(incomeTable);
 
   doc.autoTable({
     startY: 30,
@@ -382,10 +401,8 @@ function sortExpense(column) {
   doc.text("Expenditure Details", 20, 20);
 
   const expenseTable = document.getElementById("expenditureTable");
-  const expenseRows = [...expenseTable.querySelectorAll("tr")].map(tr =>
-    [...tr.querySelectorAll("th, td")].map(td => td.innerText)
-  );
-
+  const expenseRows = normalizeTableData(expenseTable);
+    
   doc.autoTable({
     startY: 30,
     head: [expenseRows[0]],
